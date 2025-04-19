@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 @Data
@@ -22,8 +23,8 @@ public class Wallet {
     @Column(scale = 2)
     private BigDecimal balance;
 
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Date createdAt;
+    private Date updatedAt;
 
     @ManyToOne
     @JoinColumn(name = "userId", referencedColumnName = "id")

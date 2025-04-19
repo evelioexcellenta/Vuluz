@@ -7,5 +7,4 @@ import lombok.Data;
 public class RegisterResponse {
     private String status;
     private String message;
-    private User user;
 }
