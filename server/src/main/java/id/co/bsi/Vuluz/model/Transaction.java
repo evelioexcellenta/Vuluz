@@ -3,25 +3,32 @@ package id.co.bsi.Vuluz.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Data
 @Table
 @Entity
 public class Transaction {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long walletId;
     private String transactionType;
-    private Long amount;
+
+    @Column(precision = 20, scale = 2)
+    private BigDecimal amount;
+
+    private String paymentMethod;
     private Long fromWalletNumber;
     private Long toWalletNumber;
-    private Date transactionDate;
+    private LocalDateTime transactionDate;
     private String description;
 
     @ManyToOne
     @JoinColumn(name = "walletId", referencedColumnName = "id")
-    private Wallet wallets;
+    private Wallet wallet;
+
 }

@@ -3,29 +3,36 @@ package id.co.bsi.Vuluz.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.util.Date;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
 @Table
 @Entity
 public class Wallet {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long userId;
-    private Long walletNumber;
     private String walletName;
-    private Long balance;
-    private Date createdAt;
-    private Date updatedAt;
+    private Long walletNumber;
+
+    @Column(scale = 2)
+    private BigDecimal balance;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     @ManyToOne
     @JoinColumn(name = "userId", referencedColumnName = "id")
     private User user;
 
-    @OneToMany(mappedBy = "wallets", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "wallet", cascade = CascadeType.ALL)
     private List<Transaction> transactions;
+
+    @OneToMany(mappedBy = "wallet", cascade = CascadeType.ALL)
+    private List<Favorite> favorites;
 
 }
