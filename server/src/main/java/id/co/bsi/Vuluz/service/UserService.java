@@ -1,13 +1,18 @@
 package id.co.bsi.Vuluz.service;
 
+import id.co.bsi.Vuluz.dto.request.RegisterRequest;
+import id.co.bsi.Vuluz.model.User;
+import id.co.bsi.Vuluz.model.Wallet;
 import id.co.bsi.Vuluz.repository.UserRepository;
 import id.co.bsi.Vuluz.repository.WalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.util.concurrent.ThreadLocalRandom;
 
-import java.util.Date;
-import java.util.Optional;
-import java.util.Random;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 public class UserService {
@@ -18,4 +23,37 @@ public class UserService {
     @Autowired
     private WalletRepository walletRepository;
 
+
+    public User register(RegisterRequest registerRequest) {
+
+        Optional<User> checkUserByEmail = this.userRepository.findByEmail(registerRequest.getEmail());
+
+        if (checkUserByEmail.isPresent()) {
+            throw new RuntimeException("Email already exists");
+        }
+
+        User users = new User();
+        users.setEmail(registerRequest.getEmail());
+        users.setPassword(registerRequest.getPassword());
+        users.setUserName(registerRequest.getUserName());
+        users.setFullName(registerRequest.getFullName());
+        users.setGender(registerRequest.getGender());
+
+        List<Wallet> listWallets = new ArrayList<>();
+
+        Wallet wallets = new Wallet();
+        wallets.setUser(users);
+        long randomWalletNumber = ThreadLocalRandom.current().nextLong(100000, 1000000); // 6 digit
+        wallets.setWalletNumber(randomWalletNumber);
+        wallets.setBalance(BigDecimal.valueOf(0));
+        wallets.setWalletName("Main Pocket");
+        wallets.setCreatedAt(new Date());
+        wallets.setUpdatedAt(new Date());
+
+        listWallets.add(wallets);
+
+        users.setWallets(listWallets);
+
+        return this.userRepository.save(users);
+    }
 }
