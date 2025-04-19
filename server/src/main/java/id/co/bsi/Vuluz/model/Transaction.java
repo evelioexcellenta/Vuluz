@@ -16,7 +16,12 @@ public class Transaction {
     private Long walletId;
     private String transactionType;
     private Long amount;
-    private Long recipientWalletId;
+    private Long fromWalletNumber;
+    private Long toWalletNumber;
     private Date transactionDate;
     private String description;
+
+    @ManyToOne
+    @JoinColumn(name = "walletId", referencedColumnName = "id")
+    private Wallet wallets;
 }
