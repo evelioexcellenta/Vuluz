@@ -85,4 +85,12 @@ public class UserService {
 
         return jwtUtility.generateToken(userDetails, user.getId());
     }
+
+//    public String getEmailFromToken(String token) {
+//        return jwtTokenUtils.extractEmail(token);
+//    }
+//
+//    public User getUserByEmail(String email) {
+//        return userRepository.findFirstByEmail(email);
+//    }
 }
