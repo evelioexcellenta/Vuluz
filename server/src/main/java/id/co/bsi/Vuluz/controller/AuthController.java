@@ -6,21 +6,18 @@ import id.co.bsi.Vuluz.dto.response.LogInResponse;
 import id.co.bsi.Vuluz.dto.response.RegisterResponse;
 import id.co.bsi.Vuluz.model.User;
 import id.co.bsi.Vuluz.service.UserService;
-import id.co.bsi.Vuluz.utils.JWTTokenUtils;
+import id.co.bsi.Vuluz.utils.JwtUtility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @RestController
 public class AuthController {
     @Autowired
     private UserService usersService;
-    private JWTTokenUtils jwtTokenUtils;
+    private JwtUtility jwtUtility;
 
 
     @PostMapping("/api/auth/register")

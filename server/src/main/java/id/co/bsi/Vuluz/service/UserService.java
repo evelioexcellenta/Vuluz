@@ -6,14 +6,18 @@ import id.co.bsi.Vuluz.model.User;
 import id.co.bsi.Vuluz.model.Wallet;
 import id.co.bsi.Vuluz.repository.UserRepository;
 import id.co.bsi.Vuluz.repository.WalletRepository;
-import id.co.bsi.Vuluz.utils.JWTTokenUtils;
+import id.co.bsi.Vuluz.utils.JwtUtility;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.concurrent.ThreadLocalRandom;
+import org.springframework.security.authentication.AuthenticationManager;
 
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -26,7 +30,16 @@ public class UserService {
     private WalletRepository walletRepository;
 
     @Autowired
-    private JWTTokenUtils jwtTokenUtils;
+    private JwtUtility jwtUtility;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public User register(RegisterRequest registerRequest) {
 
@@ -38,7 +51,7 @@ public class UserService {
 
         User users = new User();
         users.setEmail(registerRequest.getEmail());
-        users.setPassword(registerRequest.getPassword());
+        users.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         users.setUserName(registerRequest.getUserName());
         users.setFullName(registerRequest.getFullName());
         users.setGender(registerRequest.getGender());
@@ -62,11 +75,14 @@ public class UserService {
     }
 
     public String login(LogInRequest loginRequest) {
-        String token = jwtTokenUtils.generateToken(loginRequest.getEmail());
-        Optional<User> findUserByEmailanadPassword = this.userRepository.findByEmailAndPassword(loginRequest.getEmail(), loginRequest.getPassword());
-        if (findUserByEmailanadPassword.isEmpty()) {
-            throw new RuntimeException("Email and password do not match");
-        }
-        return token;
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
+        );
+
+        UserDetails userDetails = this.userDetailsService.loadUserByUsername(loginRequest.getEmail());
+        User user = this.userRepository.findByEmail(loginRequest.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found with email " + loginRequest.getEmail()));
+
+        return jwtUtility.generateToken(userDetails, user.getId());
     }
 }

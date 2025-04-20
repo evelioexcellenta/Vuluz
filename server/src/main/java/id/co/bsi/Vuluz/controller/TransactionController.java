@@ -1,6 +1,8 @@
 package id.co.bsi.Vuluz.controller;
 
+import id.co.bsi.Vuluz.dto.request.TopUpRequest;
 import id.co.bsi.Vuluz.dto.request.TransferRequest;
+import id.co.bsi.Vuluz.dto.response.TopUpResponse;
 import id.co.bsi.Vuluz.dto.response.TransferResponse;
 import id.co.bsi.Vuluz.model.User;
 import id.co.bsi.Vuluz.service.TransactionService;
@@ -31,9 +33,22 @@ public class TransactionController {
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             TransferResponse response = new TransferResponse();
-            response.setStatus("error");
+            response.setStatus("Error");
             response.setMessage(e.getMessage());
             return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @PostMapping("api/topup")
+    public ResponseEntity<TopUpResponse> topup(@RequestBody TopUpRequest topUpRequest){
+        try {
+            TopUpResponse topUpResponse = transactionService.topup(topUpRequest);
+            return ResponseEntity.ok(topUpResponse);
+        } catch (RuntimeException e){
+            TopUpResponse topUpResponse = new TopUpResponse();
+            topUpResponse.setStatus("Error");
+            topUpResponse.setMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(topUpResponse);
         }
     }
 }
