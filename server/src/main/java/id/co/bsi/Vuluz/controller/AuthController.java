@@ -23,14 +23,14 @@ public class AuthController {
     private JWTTokenUtils jwtTokenUtils;
 
 
-    @PostMapping("/api/register")
+    @PostMapping("/api/auth/register")
     public ResponseEntity<RegisterResponse> register(@RequestBody RegisterRequest registerRequest) {
         RegisterResponse registerResponse = new RegisterResponse();
         try {
             User register = this.usersService.register(registerRequest);
 
             registerResponse.setStatus("OK");
-            registerResponse.setMessage("berhasil register");
+            registerResponse.setMessage("Register succeed");
 
         } catch (Exception e) {
 
@@ -40,13 +40,13 @@ public class AuthController {
         return ResponseEntity.ok(registerResponse);
     }
 
-    @PostMapping("/api/login")
+    @PostMapping("/api/auth/login")
     public ResponseEntity<LogInResponse> login(@RequestBody LogInRequest loginRequest) {
         LogInResponse loginResponse = new LogInResponse();
         try {
             String token = this.usersService.login(loginRequest);
             loginResponse.setStatus("OK");
-            loginResponse.setMessage("berhasil login");
+            loginResponse.setMessage("Login succeed");
             loginResponse.setToken(token);
         } catch (Exception e) {
             loginResponse.setStatus("FAILED");

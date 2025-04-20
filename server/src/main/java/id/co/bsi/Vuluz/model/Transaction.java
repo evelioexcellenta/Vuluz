@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Date;
 
 @Data
@@ -24,7 +23,7 @@ public class Transaction {
     private String paymentMethod;
     private Long fromWalletNumber;
     private Long toWalletNumber;
-    private LocalDateTime transactionDate;
+    private Date transactionDate;
     private String description;
 
     @ManyToOne
