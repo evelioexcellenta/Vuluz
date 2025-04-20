@@ -41,17 +41,29 @@ public class TransactionService {
         walletRepository.save(fromWallet);
         walletRepository.save(toWallet);
 
-        Transaction transaction = new Transaction();
-        transaction.setTransactionType("Transfer");
-        transaction.setAmount(transferRequest.getAmount());
-        transaction.setFromWalletNumber(fromWallet.getWalletNumber());
-        transaction.setToWalletNumber(toWallet.getWalletNumber());
-        transaction.setTransactionDate(new Date());
-        transaction.setDescription(transferRequest.getNotes());
-        transaction.setPaymentMethod("Vuluz");
-        transaction.setWallet(fromWallet);
+        Transaction transactionIn = new Transaction();
+        transactionIn.setTransactionType("Transfer In");
+        transactionIn.setAmount(transferRequest.getAmount());
+        transactionIn.setFromWalletNumber(fromWallet.getWalletNumber());
+        transactionIn.setToWalletNumber(toWallet.getWalletNumber());
+        transactionIn.setTransactionDate(new Date());
+        transactionIn.setDescription(transferRequest.getNotes());
+        transactionIn.setPaymentMethod("Vuluz");
+        transactionIn.setWallet(toWallet);
 
-        transactionRepository.save(transaction);
+        transactionRepository.save(transactionIn);
+
+        Transaction transactionOut = new Transaction();
+        transactionOut.setTransactionType("Transfer Out");
+        transactionOut.setAmount(transferRequest.getAmount());
+        transactionOut.setFromWalletNumber(fromWallet.getWalletNumber());
+        transactionOut.setToWalletNumber(toWallet.getWalletNumber());
+        transactionOut.setTransactionDate(new Date());
+        transactionOut.setDescription(transferRequest.getNotes());
+        transactionOut.setPaymentMethod("Vuluz");
+        transactionOut.setWallet(fromWallet);
+
+        transactionRepository.save(transactionOut);
 
         TransferResponse response = new TransferResponse();
         response.setStatus("success");
