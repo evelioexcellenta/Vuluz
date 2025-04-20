@@ -72,10 +72,8 @@ public class JWTFilter extends OncePerRequestFilter {
             }
 
             filterChain.doFilter(request, response);
-        } catch (Exception exception) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"status\":\"error\", \"message\":\"Unauthorized\"}");
+        } catch (Exception exception) { //diganti karena tadi muncul Error getOutputStream() has already been called for this response
+            handlerExceptionResolver.resolveException(request, response, null, exception);
         }
 
     }

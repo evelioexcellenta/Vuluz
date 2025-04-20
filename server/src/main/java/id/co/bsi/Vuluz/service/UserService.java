@@ -69,4 +69,13 @@ public class UserService {
         }
         return token;
     }
+
+    public String getEmailFromToken(String token) {
+        return jwtTokenUtils.extractEmail(token);
+    }
+
+    public User getUserByEmail(String email) {
+        return userRepository.findFirstByEmail(email);
+    }
+
 }
