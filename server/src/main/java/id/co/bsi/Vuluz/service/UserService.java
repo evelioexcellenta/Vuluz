@@ -1,10 +1,12 @@
 package id.co.bsi.Vuluz.service;
 
+import id.co.bsi.Vuluz.dto.request.LogInRequest;
 import id.co.bsi.Vuluz.dto.request.RegisterRequest;
 import id.co.bsi.Vuluz.model.User;
 import id.co.bsi.Vuluz.model.Wallet;
 import id.co.bsi.Vuluz.repository.UserRepository;
 import id.co.bsi.Vuluz.repository.WalletRepository;
+import id.co.bsi.Vuluz.utils.JWTTokenUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.concurrent.ThreadLocalRandom;
@@ -23,6 +25,8 @@ public class UserService {
     @Autowired
     private WalletRepository walletRepository;
 
+    @Autowired
+    private JWTTokenUtils jwtTokenUtils;
 
     public User register(RegisterRequest registerRequest) {
 
@@ -55,5 +59,14 @@ public class UserService {
         users.setWallets(listWallets);
 
         return this.userRepository.save(users);
+    }
+
+    public String login(LogInRequest loginRequest) {
+        String token = jwtTokenUtils.generateToken(loginRequest.getEmail());
+        Optional<User> findUserByEmailanadPassword = this.userRepository.findByEmailAndPassword(loginRequest.getEmail(), loginRequest.getPassword());
+        if (findUserByEmailanadPassword.isEmpty()) {
+            throw new RuntimeException("Email and password do not match");
+        }
+        return token;
     }
 }
