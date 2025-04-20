@@ -1,18 +1,25 @@
 package id.co.bsi.Vuluz.service;
 
+import id.co.bsi.Vuluz.dto.request.CreateWalletRequest;
 import id.co.bsi.Vuluz.dto.request.TopUpRequest;
 import id.co.bsi.Vuluz.dto.request.TransferRequest;
+import id.co.bsi.Vuluz.dto.response.CreateWalletResponse;
 import id.co.bsi.Vuluz.dto.response.TopUpResponse;
 import id.co.bsi.Vuluz.dto.response.TransferResponse;
 import id.co.bsi.Vuluz.model.Transaction;
+import id.co.bsi.Vuluz.model.User;
 import id.co.bsi.Vuluz.model.Wallet;
 import id.co.bsi.Vuluz.repository.TransactionRepository;
 import id.co.bsi.Vuluz.repository.UserRepository;
 import id.co.bsi.Vuluz.repository.WalletRepository;
+import id.co.bsi.Vuluz.utils.SecurityUtility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.Date;
+import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class TransactionService {
@@ -24,6 +31,9 @@ public class TransactionService {
 
     @Autowired
     private TransactionRepository transactionRepository;
+
+    @Autowired
+    private SecurityUtility securityUtility;
 
     public TransferResponse transfer(TransferRequest transferRequest) {
         Wallet fromWallet = walletRepository.findByWalletNumber(transferRequest.getFromWalletNumber())
@@ -99,5 +109,23 @@ public class TransactionService {
         response.setMessage("Top Up Success");
 
         return response;
+    }
+
+    public Wallet createWallet(CreateWalletRequest createWalletRequest){
+        Wallet wallet = new Wallet();
+        wallet.setWalletName(createWalletRequest.getWalletName());
+        wallet.setBalance(BigDecimal.valueOf(0));
+        wallet.setCreatedAt(new Date());
+        wallet.setUpdatedAt(new Date());
+
+        long randomWalletNumber = ThreadLocalRandom.current().nextLong(100000, 1000000); // 6 digit
+        wallet.setWalletNumber(randomWalletNumber);
+
+        User user = userRepository.findById(securityUtility.getCurrentUserId()).get();
+        wallet.setUser(user);
+
+        walletRepository.save(wallet);
+
+        return wallet;
     }
 }

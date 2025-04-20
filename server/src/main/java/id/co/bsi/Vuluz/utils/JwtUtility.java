@@ -33,8 +33,8 @@ public class JwtUtility {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    public Integer extractUserId(String token) {
-        return extractClaim(token, claims -> claims.get("userId", Integer.class));
+    public Long extractUserId(String token) {
+        return extractClaim(token, claims -> claims.get("userId", Long.class));
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
