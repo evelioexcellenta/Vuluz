@@ -1,8 +1,10 @@
 package id.co.bsi.Vuluz.controller;
 
+import id.co.bsi.Vuluz.dto.request.AddFavoriteRequest;
 import id.co.bsi.Vuluz.dto.request.CreateWalletRequest;
 import id.co.bsi.Vuluz.dto.request.TopUpRequest;
 import id.co.bsi.Vuluz.dto.request.TransferRequest;
+import id.co.bsi.Vuluz.dto.response.AddFavoriteResponse;
 import id.co.bsi.Vuluz.dto.response.CreateWalletResponse;
 import id.co.bsi.Vuluz.dto.response.TopUpResponse;
 import id.co.bsi.Vuluz.dto.response.TransferResponse;
@@ -23,11 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class TransactionController {
     @Autowired
     private TransactionService transactionService;
-
-    @GetMapping("/api/transactions")
-    private ResponseEntity<String> test(@AuthenticationPrincipal User user){
-        return ResponseEntity.ok(user.getUserName());
-    }
 
     @PostMapping("/api/transfer")
     public ResponseEntity<TransferResponse> transfer(@RequestBody TransferRequest transferRequest) {
@@ -55,17 +52,30 @@ public class TransactionController {
         }
     }
 
-    @PostMapping("api/wallets")
-    public ResponseEntity<CreateWalletResponse> createWallet(@RequestBody CreateWalletRequest createWalletRequest){
-        CreateWalletResponse createWalletResponse = new CreateWalletResponse();
-        try {
-            Wallet newWallet = this.transactionService.createWallet(createWalletRequest);
-            createWalletResponse.setStatus("OK");
-            createWalletResponse.setMessage("New wallet is created");
-        } catch (Exception e) {
-            createWalletResponse.setStatus("FAILED");
-            createWalletResponse.setMessage(e.getMessage());
-        }
-        return ResponseEntity.ok(createWalletResponse);
-    }
+//    @PostMapping("api/wallets")
+//    public ResponseEntity<CreateWalletResponse> createWallet(@RequestBody CreateWalletRequest createWalletRequest){
+//        CreateWalletResponse createWalletResponse = new CreateWalletResponse();
+//        try {
+//            Wallet newWallet = this.transactionService.createWallet(createWalletRequest);
+//            createWalletResponse.setStatus("OK");
+//            createWalletResponse.setMessage("New wallet is created");
+//        } catch (Exception e) {
+//            createWalletResponse.setStatus("FAILED");
+//            createWalletResponse.setMessage(e.getMessage());
+//        }
+//        return ResponseEntity.ok(createWalletResponse);
+//    }
+
+//    @PostMapping("api/favorite")
+//    public ResponseEntity<AddFavoriteResponse> addFavorite(@RequestBody AddFavoriteRequest addFavoriteRequest){
+//        try {
+//            AddFavoriteResponse addFavoriteResponse = transactionService.addFavoriteResponse(addFavoriteRequest);
+//            return ResponseEntity.ok(addFavoriteResponse);
+//        } catch (RuntimeException e){
+//            AddFavoriteResponse addFavoriteResponse = new AddFavoriteResponse();
+//            addFavoriteResponse.setStatus("Error");
+//            addFavoriteResponse.setMessage(e.getMessage());
+//            return ResponseEntity.badRequest().body(addFavoriteResponse);
+//        }
+//    }
 }

@@ -1,14 +1,18 @@
 package id.co.bsi.Vuluz.service;
 
+import id.co.bsi.Vuluz.dto.request.AddFavoriteRequest;
 import id.co.bsi.Vuluz.dto.request.CreateWalletRequest;
 import id.co.bsi.Vuluz.dto.request.TopUpRequest;
 import id.co.bsi.Vuluz.dto.request.TransferRequest;
+import id.co.bsi.Vuluz.dto.response.AddFavoriteResponse;
 import id.co.bsi.Vuluz.dto.response.CreateWalletResponse;
 import id.co.bsi.Vuluz.dto.response.TopUpResponse;
 import id.co.bsi.Vuluz.dto.response.TransferResponse;
+import id.co.bsi.Vuluz.model.Favorite;
 import id.co.bsi.Vuluz.model.Transaction;
 import id.co.bsi.Vuluz.model.User;
 import id.co.bsi.Vuluz.model.Wallet;
+import id.co.bsi.Vuluz.repository.FavoriteRepository;
 import id.co.bsi.Vuluz.repository.TransactionRepository;
 import id.co.bsi.Vuluz.repository.UserRepository;
 import id.co.bsi.Vuluz.repository.WalletRepository;
@@ -17,7 +21,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -35,9 +41,14 @@ public class TransactionService {
     @Autowired
     private SecurityUtility securityUtility;
 
+    @Autowired
+    private FavoriteRepository favoriteRepository;
+
     public TransferResponse transfer(TransferRequest transferRequest) {
-        Wallet fromWallet = walletRepository.findByWalletNumber(transferRequest.getFromWalletNumber())
-                .orElseThrow(() -> new RuntimeException("Sender wallet number is not found"));
+//        Wallet fromWallet = walletRepository.findByWalletNumber(transferRequest.getFromWalletNumber())
+//                .orElseThrow(() -> new RuntimeException("Sender wallet number is not found"));
+        User user = userRepository.findById(securityUtility.getCurrentUserId()).get();
+        Wallet fromWallet = user.getWallet();
 
         Wallet toWallet = walletRepository.findByWalletNumber(transferRequest.getToWalletNumber())
                 .orElseThrow(() -> new RuntimeException("Receiver wallet number is not found"));
@@ -86,8 +97,10 @@ public class TransactionService {
     }
 
     public TopUpResponse topup(TopUpRequest topUpRequest){
-        Wallet wallet = walletRepository.findByWalletNumber(topUpRequest.getWalletNumber())
-                .orElseThrow(() -> new RuntimeException("Wallet is not found"));
+//        Wallet wallet = walletRepository.findByWalletNumber(topUpRequest.getWalletNumber())
+//                .orElseThrow(() -> new RuntimeException("Wallet is not found"));
+        User user = userRepository.findById(securityUtility.getCurrentUserId()).get();
+        Wallet wallet = user.getWallet();
 
         wallet.setBalance(wallet.getBalance().add(topUpRequest.getAmount()));
         wallet.setUpdatedAt(new Date());
@@ -96,8 +109,10 @@ public class TransactionService {
         Transaction transaction = new Transaction();
         transaction.setTransactionType("Top Up");
         transaction.setAmount(topUpRequest.getAmount());
-        transaction.setFromWalletNumber(topUpRequest.getWalletNumber());
-        transaction.setToWalletNumber(topUpRequest.getWalletNumber());
+//        transaction.setFromWalletNumber(topUpRequest.getWalletNumber());
+//        transaction.setToWalletNumber(topUpRequest.getWalletNumber());
+        transaction.setFromWalletNumber(wallet.getWalletNumber());
+        transaction.setToWalletNumber(wallet.getWalletNumber());
         transaction.setTransactionDate(new Date());
         transaction.setDescription(topUpRequest.getDescription());
         transaction.setPaymentMethod(topUpRequest.getPaymentMethod());
@@ -111,21 +126,53 @@ public class TransactionService {
         return response;
     }
 
-    public Wallet createWallet(CreateWalletRequest createWalletRequest){
-        Wallet wallet = new Wallet();
-        wallet.setWalletName(createWalletRequest.getWalletName());
-        wallet.setBalance(BigDecimal.valueOf(0));
-        wallet.setCreatedAt(new Date());
-        wallet.setUpdatedAt(new Date());
+//    public Wallet createWallet(CreateWalletRequest createWalletRequest){
+//        Wallet wallet = new Wallet();
+//        wallet.setWalletName(createWalletRequest.getWalletName());
+//        wallet.setBalance(BigDecimal.valueOf(0));
+//        wallet.setCreatedAt(new Date());
+//        wallet.setUpdatedAt(new Date());
+//
+//        long randomWalletNumber = ThreadLocalRandom.current().nextLong(100000, 1000000); // 6 digit
+//        wallet.setWalletNumber(randomWalletNumber);
+//
+//        User user = userRepository.findById(securityUtility.getCurrentUserId()).get();
+//        wallet.setUser(user);
+//
+//        walletRepository.save(wallet);
+//
+//        return wallet;
+//    }
 
-        long randomWalletNumber = ThreadLocalRandom.current().nextLong(100000, 1000000); // 6 digit
-        wallet.setWalletNumber(randomWalletNumber);
+//    public AddFavoriteResponse addFavoriteResponse(AddFavoriteRequest addFavoriteRequest){
+//        User user = userRepository.findById(securityUtility.getCurrentUserId()).get();
+//
+//        Wallet wallet = user.getWallet();
+//        wallet.setUpdatedAt(new Date());
+//
+//        Wallet toWallet = walletRepository.findByWalletNumber(addFavoriteRequest.getWalletNumber())
+//                .orElseThrow(() -> new RuntimeException("Wallet is not found"));
+//        toWallet.setUpdatedAt(new Date());
+//
+//        List<Favorite> listFavorite = new ArrayList<>();
+//
+//        Favorite favorite = new Favorite();
+//        favorite.setFromWallet(wallet);
+//        favorite.setToWallet(toWallet);
+//        favoriteRepository.save(favorite);
+//
+//        listFavorite.add(favorite);
+//        wallet.setFavoritesGiven(listFavorite);
+//        toWallet.setFavoritesReceived(listFavorite);
+//
+//        walletRepository.save(wallet);
+//        walletRepository.save(toWallet);
+//
+//        AddFavoriteResponse addFavoriteResponse = new AddFavoriteResponse();
+//        addFavoriteResponse.setStatus("Success");
+//        addFavoriteResponse.setMessage("Favorite is added");
+//
+//        return addFavoriteResponse;
+//    }
 
-        User user = userRepository.findById(securityUtility.getCurrentUserId()).get();
-        wallet.setUser(user);
-
-        walletRepository.save(wallet);
-
-        return wallet;
-    }
 }

@@ -11,6 +11,7 @@ import id.co.bsi.Vuluz.service.UserService;
 import id.co.bsi.Vuluz.utils.JwtUtility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -22,6 +23,7 @@ public class AuthController {
     @Autowired
     private UserService usersService;
     private JwtUtility jwtUtility;
+    private UserDetailsService userDetailsService;
 
 
     @PostMapping("/api/auth/register")
@@ -60,7 +62,7 @@ public class AuthController {
 //    public ResponseEntity<UserProfileResponse> getProfile(@RequestHeader("Authorization") String authHeader) {
 //        try {
 //            String token = authHeader.replace("Bearer ", "");
-//            String email = usersService.getEmailFromToken(token);
+//            String email = userDetailsService.get(token);
 //            User user = usersService.getUserByEmail(email);
 //
 //            // Ambil wallet pertama
@@ -97,45 +99,6 @@ public class AuthController {
 //            );
 //        }
 //    }
-@GetMapping("/api/auth/profile")
-public ResponseEntity<UserProfileResponse> getProfile(@RequestHeader("Authorization") String authHeader) {
-    try {
-        String token = authHeader.replace("Bearer ", "");
-        Integer userId = usersService.extractUserIdFromToken(token);
-        User user = usersService.getUserById(userId.longValue());
-
-        Long walletNumber = null;
-        BigDecimal balance = null;
-        String walletName = null;
-
-        if (user.getWallets() != null && !user.getWallets().isEmpty()) {
-            Wallet wallet = user.getWallets().get(0); // Ambil wallet pertama
-            walletNumber = wallet.getWalletNumber();
-            balance = wallet.getBalance();
-            walletName = wallet.getWalletName();
-        }
-
-        UserProfileResponse response = new UserProfileResponse(
-                "OK",
-                "User profile fetched",
-                user.getId(),
-                user.getEmail(),
-                user.getUserName(),
-                user.getFullName(),
-                user.getGender(),
-                user.getAvatarUrl(),
-                walletNumber,
-                balance,
-                walletName
-        );
-
-        return ResponseEntity.ok(response);
-    } catch (Exception e) {
-        return ResponseEntity.status(401).body(
-                new UserProfileResponse("FAILED", "Invalid token", null, null, null, null, null, null, null, null, null)
-        );
-    }
-}
 
 
 }

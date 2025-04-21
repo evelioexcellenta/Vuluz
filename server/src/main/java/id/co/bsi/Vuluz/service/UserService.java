@@ -56,20 +56,36 @@ public class UserService {
         users.setFullName(registerRequest.getFullName());
         users.setGender(registerRequest.getGender());
 
-        List<Wallet> listWallets = new ArrayList<>();
+//        List<Wallet> listWallets = new ArrayList<>();
+//
+//        Wallet wallets = new Wallet();
+//        wallets.setUser(users);
+//        long randomWalletNumber = ThreadLocalRandom.current().nextLong(100000, 1000000); // 6 digit
+//        wallets.setWalletNumber(randomWalletNumber);
+//        wallets.setBalance(BigDecimal.valueOf(0));
+//        wallets.setWalletName("Main Pocket");
+//        wallets.setCreatedAt(new Date());
+//        wallets.setUpdatedAt(new Date());
+//
+//        listWallets.add(wallets);
+//
+//        users.setWallets(listWallets);
 
-        Wallet wallets = new Wallet();
-        wallets.setUser(users);
-        long randomWalletNumber = ThreadLocalRandom.current().nextLong(100000, 1000000); // 6 digit
-        wallets.setWalletNumber(randomWalletNumber);
-        wallets.setBalance(BigDecimal.valueOf(0));
-        wallets.setWalletName("Main Pocket");
-        wallets.setCreatedAt(new Date());
-        wallets.setUpdatedAt(new Date());
+        Wallet wallet = new Wallet();
+        wallet.setUser(users);
 
-        listWallets.add(wallets);
+        Long randomWalletNumber;
+        do {
+            randomWalletNumber = ThreadLocalRandom.current().nextLong(100000, 1000000);
+        } while (walletRepository.findByWalletNumber(randomWalletNumber).isPresent());
 
-        users.setWallets(listWallets);
+        wallet.setWalletNumber(randomWalletNumber);
+        wallet.setBalance(BigDecimal.valueOf(0));
+        wallet.setWalletName("Main Pocket");
+        wallet.setCreatedAt(new Date());
+        wallet.setUpdatedAt(new Date());
+
+        users.setWallet(wallet);
 
         return this.userRepository.save(users);
     }
@@ -86,27 +102,10 @@ public class UserService {
         return jwtUtility.generateToken(userDetails, user.getId());
     }
 
-    public Long getId (String token) {
-        return jwtUtility.extractUserId(token);
-    }
-
-
-    public User getUserById(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with ID " + id));
-    }
-
-    public Integer extractUserIdFromToken(String token) {
-        return jwtUtility.extractUserId(token);
-    }
-
-
-
-//    public String getEmailFromToken(String token) {
-//        return jwtTokenUtils.extractEmail(token);
+//    public Long getId (String token) {
+//        return jwtUtility.extractUserId(token);
 //    }
 //
-//    public User getUserByEmail(String email) {
-//        return userRepository.findFirstByEmail(email);
-//    }
+//    public User getProfile(Long id)
+
 }

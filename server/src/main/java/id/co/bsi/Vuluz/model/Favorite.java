@@ -7,16 +7,15 @@ import lombok.Data;
 @Table
 @Entity
 public class Favorite {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "userId", referencedColumnName = "id")
-    private User user;
+    @JoinColumn(name = "fromWalletId")
+    private Wallet fromWallet;
 
     @ManyToOne
-    @JoinColumn(name = "walletId", referencedColumnName = "id")
-    private Wallet wallet;
+    @JoinColumn(name = "toWalletId")
+    private Wallet toWallet;
 }

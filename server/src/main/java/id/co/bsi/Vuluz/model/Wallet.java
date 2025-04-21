@@ -1,5 +1,6 @@
 package id.co.bsi.Vuluz.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -18,6 +19,8 @@ public class Wallet {
     private Long id;
 
     private String walletName;
+
+    @Column(unique = true)
     private Long walletNumber;
 
     @Column(scale = 2)
@@ -26,14 +29,19 @@ public class Wallet {
     private Date createdAt;
     private Date updatedAt;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "userId", referencedColumnName = "id")
     private User user;
 
     @OneToMany(mappedBy = "wallet", cascade = CascadeType.ALL)
     private List<Transaction> transactions;
 
-    @OneToMany(mappedBy = "wallet", cascade = CascadeType.ALL)
-    private List<Favorite> favorites;
+    @JsonIgnore
+    @OneToMany(mappedBy = "fromWallet", cascade = CascadeType.ALL)
+    private List<Favorite> favoritesGiven;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "toWallet", cascade = CascadeType.ALL)
+    private List<Favorite> favoritesReceived;
 
 }

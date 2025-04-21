@@ -63,6 +63,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (JwtException ex) {
             sendErrorResponse(response, "Invalid JWT token");
         } catch (Exception ex) {
+//            ex.printStackTrace(); //dipanggil untuk debug
             sendErrorResponse(response, "Authentication required");
         }
     }
