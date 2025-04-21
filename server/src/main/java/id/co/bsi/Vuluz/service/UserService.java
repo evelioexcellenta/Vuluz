@@ -86,6 +86,17 @@ public class UserService {
         return jwtUtility.generateToken(userDetails, user.getId());
     }
 
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with ID " + id));
+    }
+
+    public Integer extractUserIdFromToken(String token) {
+        return jwtUtility.extractUserId(token);
+    }
+
+
+
 //    public String getEmailFromToken(String token) {
 //        return jwtTokenUtils.extractEmail(token);
 //    }
