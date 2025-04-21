@@ -94,7 +94,7 @@ const BalanceCard = ({ className = "" }) => {
           <Link to={ROUTES.TRANSFER} className="btn bg-white/10 hover:bg-white/20 text-white border border-white/20 ">
             Transfer
           </Link>
-          <Link to={ROUTES.TOP_UP} className="btn bg-white/10 hover:bg-white/20 text-white border border-white/20">
+          <Link to={ROUTES.TOP_UP} className="btn bg-white/10 hover:bg-white/20 text-white border border-white/20 ">
             Top Up
           </Link>
         </div>

@@ -7,14 +7,15 @@ const AppLayout = ({ children }) => {
   return (
     <>
       {" "}
-      <Navbar />
+      {/* <Navbar /> */}
       <div className="min-h-screen flex bg-gray-50">
-        {/* Sidebar */}
         <Sidebar />
 
         {/* Main Content */}
-        <div className="flex-1">
-          <main className="py-6 px-8 ml-20 mr-20">{children}</main>
+        <div className="flex-1 pl-64">
+          {" "}
+          {/* Tambahkan pl-64 agar tidak ketimpa sidebar */}
+          <main className="py-6 px-8">{children}</main>
         </div>
       </div>
     </>

@@ -146,7 +146,7 @@ const CashFlowChart = ({ period = 'weekly', className = '' }) => {
     <Card className={`animate-fade-in ${className}`}>
       <Card.Header title={getChartTitle()} />
       <Card.Body>
-        {/* {isLoading ? (
+        {isLoading ? (
           <div className="h-64 w-full flex items-center justify-center">
             <svg className="animate-spin h-8 w-8 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -157,7 +157,7 @@ const CashFlowChart = ({ period = 'weekly', className = '' }) => {
           <div className="h-64">
             <canvas ref={chartRef}></canvas>
           </div>
-        )} */}
+        )}
         Chart here
       </Card.Body>
     </Card>
