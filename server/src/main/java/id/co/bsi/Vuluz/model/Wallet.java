@@ -36,12 +36,12 @@ public class Wallet {
     @OneToMany(mappedBy = "wallet", cascade = CascadeType.ALL)
     private List<Transaction> transactions;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "fromWallet", cascade = CascadeType.ALL)
-    private List<Favorite> favoritesGiven;
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "toWallet", cascade = CascadeType.ALL)
-    private List<Favorite> favoritesReceived;
+//    @JsonIgnore
+//    @OneToMany(mappedBy = "fromWallet", cascade = CascadeType.ALL)
+//    private List<Favorite> favoritesGiven;
+//
+//    @JsonIgnore
+//    @OneToMany(mappedBy = "toWallet", cascade = CascadeType.ALL)
+//    private List<Favorite> favoritesReceived;
 
 }

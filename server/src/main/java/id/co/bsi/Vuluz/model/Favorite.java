@@ -12,10 +12,8 @@ public class Favorite {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "fromWalletId")
-    private Wallet fromWallet;
+    @JoinColumn(name = "userId", referencedColumnName = "id")
+    private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "toWalletId")
-    private Wallet toWallet;
+    private Long walletId;
 }
