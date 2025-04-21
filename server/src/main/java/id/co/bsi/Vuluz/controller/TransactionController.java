@@ -1,10 +1,13 @@
 package id.co.bsi.Vuluz.controller;
 
+import id.co.bsi.Vuluz.dto.request.CreateWalletRequest;
 import id.co.bsi.Vuluz.dto.request.TopUpRequest;
 import id.co.bsi.Vuluz.dto.request.TransferRequest;
+import id.co.bsi.Vuluz.dto.response.CreateWalletResponse;
 import id.co.bsi.Vuluz.dto.response.TopUpResponse;
 import id.co.bsi.Vuluz.dto.response.TransferResponse;
 import id.co.bsi.Vuluz.model.User;
+import id.co.bsi.Vuluz.model.Wallet;
 import id.co.bsi.Vuluz.service.TransactionService;
 import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,5 +53,19 @@ public class TransactionController {
             topUpResponse.setMessage(e.getMessage());
             return ResponseEntity.badRequest().body(topUpResponse);
         }
+    }
+
+    @PostMapping("api/wallets")
+    public ResponseEntity<CreateWalletResponse> createWallet(@RequestBody CreateWalletRequest createWalletRequest){
+        CreateWalletResponse createWalletResponse = new CreateWalletResponse();
+        try {
+            Wallet newWallet = this.transactionService.createWallet(createWalletRequest);
+            createWalletResponse.setStatus("OK");
+            createWalletResponse.setMessage("New wallet is created");
+        } catch (Exception e) {
+            createWalletResponse.setStatus("FAILED");
+            createWalletResponse.setMessage(e.getMessage());
+        }
+        return ResponseEntity.ok(createWalletResponse);
     }
 }

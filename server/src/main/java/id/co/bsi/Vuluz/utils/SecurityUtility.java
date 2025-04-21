@@ -11,7 +11,7 @@ public class SecurityUtility {
     @Autowired
     private JwtUtility jwtUtility;
 
-    public Integer getCurrentUserId() {
+    public Long getCurrentUserId() {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         String authHeader = request.getHeader("Authorization");
 
