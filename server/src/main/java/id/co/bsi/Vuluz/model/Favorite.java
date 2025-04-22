@@ -15,5 +15,5 @@ public class Favorite {
     @JoinColumn(name = "userId", referencedColumnName = "id")
     private User user;
 
-    private Long walletId;
+    private Long walletNumber;
 }

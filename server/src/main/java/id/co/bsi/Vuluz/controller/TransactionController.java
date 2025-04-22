@@ -66,16 +66,16 @@ public class TransactionController {
 //        return ResponseEntity.ok(createWalletResponse);
 //    }
 
-//    @PostMapping("api/favorite")
-//    public ResponseEntity<AddFavoriteResponse> addFavorite(@RequestBody AddFavoriteRequest addFavoriteRequest){
-//        try {
-//            AddFavoriteResponse addFavoriteResponse = transactionService.addFavoriteResponse(addFavoriteRequest);
-//            return ResponseEntity.ok(addFavoriteResponse);
-//        } catch (RuntimeException e){
-//            AddFavoriteResponse addFavoriteResponse = new AddFavoriteResponse();
-//            addFavoriteResponse.setStatus("Error");
-//            addFavoriteResponse.setMessage(e.getMessage());
-//            return ResponseEntity.badRequest().body(addFavoriteResponse);
-//        }
-//    }
+    @PostMapping("api/favorite")
+    public ResponseEntity<AddFavoriteResponse> addFavorite(@RequestBody AddFavoriteRequest addFavoriteRequest){
+        try {
+            AddFavoriteResponse addFavoriteResponse = transactionService.addFavoriteResponse(addFavoriteRequest);
+            return ResponseEntity.ok(addFavoriteResponse);
+        } catch (RuntimeException e){
+            AddFavoriteResponse addFavoriteResponse = new AddFavoriteResponse();
+            addFavoriteResponse.setStatus("Error");
+            addFavoriteResponse.setMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(addFavoriteResponse);
+        }
+    }
 }

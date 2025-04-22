@@ -175,4 +175,25 @@ public class TransactionService {
 //        return addFavoriteResponse;
 //    }
 
+    public AddFavoriteResponse addFavoriteResponse(AddFavoriteRequest addFavoriteRequest){
+        User user = userRepository.findById(securityUtility.getCurrentUserId())
+                .orElseThrow(() -> new RuntimeException("User is not found"));
+
+        List<Favorite> listFavorite = user.getFavorites();
+
+        Favorite favorite = new Favorite();
+        favorite.setUser(user);
+        favorite.setWalletNumber(addFavoriteRequest.getWalletNumber());
+        favoriteRepository.save(favorite);
+
+        listFavorite.add(favorite);
+        user.setFavorites(listFavorite);
+        userRepository.save(user);
+
+        AddFavoriteResponse addFavoriteResponse = new AddFavoriteResponse();
+        addFavoriteResponse.setStatus("Success");
+        addFavoriteResponse.setMessage("Favorite is added");
+        return addFavoriteResponse;
+    }
+
 }
