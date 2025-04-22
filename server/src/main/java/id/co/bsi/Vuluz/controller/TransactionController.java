@@ -1,10 +1,13 @@
 package id.co.bsi.Vuluz.controller;
 
+import id.co.bsi.Vuluz.dto.TransactionHistoryResponse;
 import id.co.bsi.Vuluz.dto.request.*;
 import id.co.bsi.Vuluz.dto.response.*;
 import id.co.bsi.Vuluz.model.User;
 import id.co.bsi.Vuluz.model.Wallet;
 import id.co.bsi.Vuluz.service.TransactionService;
+import id.co.bsi.Vuluz.service.UserService;
+import id.co.bsi.Vuluz.utils.SecurityUtility;
 import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,10 +15,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @RestController
 public class TransactionController {
     @Autowired
     private TransactionService transactionService;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private SecurityUtility securityUtility;
 
     @PostMapping("/api/transfer")
     public ResponseEntity<TransferResponse> transfer(@RequestBody TransferRequest transferRequest) {
@@ -82,4 +96,33 @@ public class TransactionController {
 //            return ResponseEntity.badRequest().body(deleteFavoriteResponse);
 //        }
 //    }
+
+    @GetMapping("api/summary")
+    public ResponseEntity<?> getMonthlySummary(
+            @RequestParam int month,
+            @RequestParam int year) {
+
+        Map<String, BigDecimal> summary = transactionService.getMonthlySummary(month, year);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("month", month);
+        response.put("year", year);
+        response.put("summary", summary);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/api/transaction/history")
+    public ResponseEntity<?> getTransactionHistory() {
+        try {
+            Long userId = securityUtility.getCurrentUserId();
+
+            List<TransactionHistoryResponse> history = transactionService.getTransactionHistory(userId);
+            return ResponseEntity.ok(history);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body("Invalid token or user not found");
+        }
+    }
+
 }

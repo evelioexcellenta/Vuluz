@@ -1,5 +1,6 @@
 package id.co.bsi.Vuluz.service;
 
+import id.co.bsi.Vuluz.dto.TransactionHistoryResponse;
 import id.co.bsi.Vuluz.dto.request.*;
 import id.co.bsi.Vuluz.dto.response.*;
 import id.co.bsi.Vuluz.model.Favorite;
@@ -11,15 +12,14 @@ import id.co.bsi.Vuluz.repository.TransactionRepository;
 import id.co.bsi.Vuluz.repository.UserRepository;
 import id.co.bsi.Vuluz.repository.WalletRepository;
 import id.co.bsi.Vuluz.utils.SecurityUtility;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 @Service
 public class TransactionService {
@@ -187,5 +187,56 @@ public class TransactionService {
 //        return response;
 //    }
 
+    public Map<String, BigDecimal> getMonthlySummary(int month, int year) {
+        Long userId = this.securityUtility.getCurrentUserId();
+        List<Transaction> transactions = transactionRepository.findByUserIdAndMonthYear(userId, month, year);
 
+        BigDecimal totalIncome = transactions.stream()
+                .filter(t -> "INCOME".equalsIgnoreCase(t.getTransactionType()))
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalExpense = transactions.stream()
+                .filter(t -> "EXPENSE".equalsIgnoreCase(t.getTransactionType()))
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal netIncome = totalIncome.subtract(totalExpense);
+
+        Map<String, BigDecimal> result = new HashMap<>();
+        result.put("totalIncome", totalIncome);
+        result.put("totalExpense", totalExpense);
+        result.put("netIncome", netIncome);
+        return result;
+    }
+
+    @Transactional
+    public List<TransactionHistoryResponse> getTransactionHistory(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow();
+
+        Wallet wallet = user.getWallet();
+
+        List<Transaction> transactions = transactionRepository.findByWallet(wallet);
+
+        return transactions.stream().map(tx -> {
+            boolean isIncoming = tx.getToWalletNumber() != null && tx.getToWalletNumber().equals(wallet.getWalletNumber());
+            String accountName = getAccountNameByWalletNumber(isIncoming ? tx.getFromWalletNumber() : tx.getToWalletNumber());
+            BigDecimal amount = isIncoming ? tx.getAmount() : tx.getAmount().negate();
+
+            return new TransactionHistoryResponse(
+                    tx.getTransactionDate(),
+                    tx.getTransactionType(),
+                    tx.getDescription(),
+                    accountName,
+                    amount
+            );
+        }).collect(Collectors.toList());
+    }
+
+    private String getAccountNameByWalletNumber(Long walletNumber) {
+        if (walletNumber == null) return "Unknown";
+        return userRepository.findByWallet_WalletNumber(walletNumber)
+                .map(User::getFullName)
+                .orElse("Unknown");
+    }
 }

@@ -9,6 +9,7 @@ import id.co.bsi.Vuluz.model.User;
 import id.co.bsi.Vuluz.model.Wallet;
 import id.co.bsi.Vuluz.service.UserService;
 import id.co.bsi.Vuluz.utils.JwtUtility;
+import id.co.bsi.Vuluz.utils.SecurityUtility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -99,6 +100,5 @@ public class AuthController {
 //            );
 //        }
 //    }
-
 
 }
