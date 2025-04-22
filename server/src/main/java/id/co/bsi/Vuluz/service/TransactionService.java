@@ -17,6 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -210,28 +212,28 @@ public class TransactionService {
         return result;
     }
 
-    @Transactional
-    public List<TransactionHistoryResponse> getTransactionHistory(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow();
-
-        Wallet wallet = user.getWallet();
-
-        List<Transaction> transactions = transactionRepository.findByWallet(wallet);
-
-        return transactions.stream().map(tx -> {
-            boolean isIncoming = tx.getToWalletNumber() != null && tx.getToWalletNumber().equals(wallet.getWalletNumber());
-            String accountName = getAccountNameByWalletNumber(isIncoming ? tx.getFromWalletNumber() : tx.getToWalletNumber());
-            BigDecimal amount = isIncoming ? tx.getAmount() : tx.getAmount().negate();
-
-            return new TransactionHistoryResponse(
-                    tx.getTransactionDate(),
-                    tx.getTransactionType(),
-                    tx.getDescription(),
-                    accountName,
-                    amount
-            );
-        }).collect(Collectors.toList());
-    }
+//    @Transactional
+//    public List<TransactionHistoryResponse> getTransactionHistory(Long userId) {
+//        User user = userRepository.findById(userId).orElseThrow();
+//
+//        Wallet wallet = user.getWallet();
+//
+//        List<Transaction> transactions = transactionRepository.findByWallet(wallet);
+//
+//        return transactions.stream().map(tx -> {
+//            boolean isIncoming = tx.getToWalletNumber() != null && tx.getToWalletNumber().equals(wallet.getWalletNumber());
+//            String accountName = getAccountNameByWalletNumber(isIncoming ? tx.getFromWalletNumber() : tx.getToWalletNumber());
+//            BigDecimal amount = isIncoming ? tx.getAmount() : tx.getAmount().negate();
+//
+//            return new TransactionHistoryResponse(
+//                    tx.getTransactionDate(),
+//                    tx.getTransactionType(),
+//                    tx.getDescription(),
+//                    accountName,
+//                    amount
+//            );
+//        }).collect(Collectors.toList());
+//    }
 
     private String getAccountNameByWalletNumber(Long walletNumber) {
         if (walletNumber == null) return "Unknown";
@@ -239,4 +241,58 @@ public class TransactionService {
                 .map(User::getFullName)
                 .orElse("Unknown");
     }
+
+    @Transactional
+    public List<TransactionHistoryResponse> getTransactionHistory(
+            Long userId,
+            String transactionType,
+            LocalDate fromDate,
+            LocalDate toDate,
+            String search
+    ) {
+        User user = userRepository.findById(userId).orElseThrow();
+        Wallet wallet = user.getWallet();
+
+        List<Transaction> transactions = transactionRepository.findByWallet(wallet);
+
+        return transactions.stream()
+                .map(tx -> {
+                    boolean isIncoming = tx.getToWalletNumber() != null && tx.getToWalletNumber().equals(wallet.getWalletNumber());
+                    String accountName = getAccountNameByWalletNumber(isIncoming ? tx.getFromWalletNumber() : tx.getToWalletNumber());
+                    BigDecimal amount = isIncoming ? tx.getAmount() : tx.getAmount().negate();
+
+                    return new TransactionHistoryResponse(
+                            tx.getTransactionDate(),
+                            tx.getTransactionType(),
+                            tx.getDescription(),
+                            accountName,
+                            amount
+                    );
+                })
+                .filter(tx -> transactionType.isEmpty() || tx.getTransactionType().equalsIgnoreCase(transactionType))
+                .filter(tx -> {
+                    if (fromDate != null) {
+                        LocalDate txDate = toLocalDate(tx.getTransactionDate());
+                        return !txDate.isBefore(fromDate);
+                    }
+                    return true;
+                })
+                .filter(tx -> {
+                    if (toDate != null) {
+                        LocalDate txDate = toLocalDate(tx.getTransactionDate());
+                        return !txDate.isAfter(toDate);
+                    }
+                    return true;
+                })
+                .filter(tx -> search.isEmpty() || tx.getAccount().toLowerCase().contains(search.toLowerCase()))
+                .sorted(Comparator.comparing(TransactionHistoryResponse::getTransactionDate).reversed())
+                .collect(Collectors.toList());
+    }
+
+    private LocalDate toLocalDate(Date date) {
+        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    }
+
+
+
 }

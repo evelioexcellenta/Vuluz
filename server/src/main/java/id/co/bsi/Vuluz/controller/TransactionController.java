@@ -10,12 +10,14 @@ import id.co.bsi.Vuluz.service.UserService;
 import id.co.bsi.Vuluz.utils.SecurityUtility;
 import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -112,17 +114,39 @@ public class TransactionController {
         return ResponseEntity.ok(response);
     }
 
+//    @GetMapping("/api/transaction/history")
+//    public ResponseEntity<?> getTransactionHistory() {
+//        try {
+//            Long userId = securityUtility.getCurrentUserId();
+//
+//            List<TransactionHistoryResponse> history = transactionService.getTransactionHistory(userId);
+//            return ResponseEntity.ok(history);
+//
+//        } catch (Exception e) {
+//            return ResponseEntity.status(401).body("Invalid token or user not found");
+//        }
+//    }
+
     @GetMapping("/api/transaction/history")
-    public ResponseEntity<?> getTransactionHistory() {
+    public ResponseEntity<?> getTransactionHistory(
+            @RequestParam(required = false, defaultValue = "") String transactionType,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false, defaultValue = "") String search
+    ) {
         try {
             Long userId = securityUtility.getCurrentUserId();
-
-            List<TransactionHistoryResponse> history = transactionService.getTransactionHistory(userId);
+            List<TransactionHistoryResponse> history = transactionService.getTransactionHistory(
+                    userId, transactionType, fromDate, toDate, search);
             return ResponseEntity.ok(history);
-
         } catch (Exception e) {
             return ResponseEntity.status(401).body("Invalid token or user not found");
         }
     }
+
+
+
+
+
 
 }
