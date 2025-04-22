@@ -148,16 +148,20 @@ public class TransactionService {
         User user = userRepository.findById(securityUtility.getCurrentUserId())
                 .orElseThrow(() -> new RuntimeException("User is not found"));
 
+        Long walletNumberToAdd = addFavoriteRequest.getWalletNumber();
         List<Favorite> listFavorite = user.getFavorites();
 
-        Favorite favorite = new Favorite();
-        favorite.setUser(user);
-        favorite.setWalletNumber(addFavoriteRequest.getWalletNumber());
-        favoriteRepository.save(favorite);
+        boolean alreadyFavorited = listFavorite.stream()
+                .anyMatch(fav -> fav.getWalletNumber().equals(walletNumberToAdd));
 
-        listFavorite.add(favorite);
-        user.setFavorites(listFavorite);
-        userRepository.save(user);
+        if (alreadyFavorited) {
+            throw new RuntimeException("Wallet number already added to favorites");
+        }
+
+        Favorite favorite = new Favorite();
+        favorite.setWalletNumber(walletNumberToAdd);
+        favorite.setUser(user);
+        favoriteRepository.save(favorite);
 
         AddFavoriteResponse addFavoriteResponse = new AddFavoriteResponse();
         addFavoriteResponse.setStatus("Success");
