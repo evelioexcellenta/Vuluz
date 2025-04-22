@@ -1,13 +1,7 @@
 package id.co.bsi.Vuluz.service;
 
-import id.co.bsi.Vuluz.dto.request.AddFavoriteRequest;
-import id.co.bsi.Vuluz.dto.request.CreateWalletRequest;
-import id.co.bsi.Vuluz.dto.request.TopUpRequest;
-import id.co.bsi.Vuluz.dto.request.TransferRequest;
-import id.co.bsi.Vuluz.dto.response.AddFavoriteResponse;
-import id.co.bsi.Vuluz.dto.response.CreateWalletResponse;
-import id.co.bsi.Vuluz.dto.response.TopUpResponse;
-import id.co.bsi.Vuluz.dto.response.TransferResponse;
+import id.co.bsi.Vuluz.dto.request.*;
+import id.co.bsi.Vuluz.dto.response.*;
 import id.co.bsi.Vuluz.model.Favorite;
 import id.co.bsi.Vuluz.model.Transaction;
 import id.co.bsi.Vuluz.model.User;
@@ -168,5 +162,30 @@ public class TransactionService {
         addFavoriteResponse.setMessage("Favorite is added");
         return addFavoriteResponse;
     }
+
+//    public DeleteFavoriteResponse deleteFavorite(Long walletNumber) {
+//        Long currentUserId = securityUtility.getCurrentUserId();
+//
+//        User user = userRepository.findById(currentUserId)
+//                .orElseThrow(() -> new RuntimeException("User is not found"));
+//
+//        Favorite favorite = favoriteRepository.findByUserAndWalletNumber(user, walletNumber)
+//                .orElseThrow(() -> new RuntimeException("Favorite not found"));
+//
+////        List<Favorite> favorites = user.getFavorites();
+////
+////        Favorite toDelete = favorites.stream()
+////                .filter(fav -> fav.getWalletNumber().equals(walletNumber))
+////                .findFirst()
+////                .orElseThrow(() -> new RuntimeException("Favorite not found"));
+//
+//        favoriteRepository.delete(favorite);
+//
+//        DeleteFavoriteResponse response = new DeleteFavoriteResponse();
+//        response.setStatus("Success");
+//        response.setMessage("Favorite has been deleted");
+//        return response;
+//    }
+
 
 }

@@ -1,13 +1,7 @@
 package id.co.bsi.Vuluz.controller;
 
-import id.co.bsi.Vuluz.dto.request.AddFavoriteRequest;
-import id.co.bsi.Vuluz.dto.request.CreateWalletRequest;
-import id.co.bsi.Vuluz.dto.request.TopUpRequest;
-import id.co.bsi.Vuluz.dto.request.TransferRequest;
-import id.co.bsi.Vuluz.dto.response.AddFavoriteResponse;
-import id.co.bsi.Vuluz.dto.response.CreateWalletResponse;
-import id.co.bsi.Vuluz.dto.response.TopUpResponse;
-import id.co.bsi.Vuluz.dto.response.TransferResponse;
+import id.co.bsi.Vuluz.dto.request.*;
+import id.co.bsi.Vuluz.dto.response.*;
 import id.co.bsi.Vuluz.model.User;
 import id.co.bsi.Vuluz.model.Wallet;
 import id.co.bsi.Vuluz.service.TransactionService;
@@ -16,10 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class TransactionController {
@@ -78,4 +69,17 @@ public class TransactionController {
             return ResponseEntity.badRequest().body(addFavoriteResponse);
         }
     }
+
+//    @DeleteMapping("/favorite/{walletNumber}")
+//    public ResponseEntity<DeleteFavoriteResponse> deleteFavorite(@PathVariable Long walletNumber){
+//        try {
+//            DeleteFavoriteResponse deleteFavoriteResponse = transactionService.deleteFavorite(walletNumber);
+//            return ResponseEntity.ok(deleteFavoriteResponse);
+//        } catch (RuntimeException e){
+//            DeleteFavoriteResponse deleteFavoriteResponse = new DeleteFavoriteResponse();
+//            deleteFavoriteResponse.setStatus("Error");
+//            deleteFavoriteResponse.setMessage(e.getMessage());
+//            return ResponseEntity.badRequest().body(deleteFavoriteResponse);
+//        }
+//    }
 }
