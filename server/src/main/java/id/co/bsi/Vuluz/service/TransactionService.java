@@ -284,7 +284,7 @@ public class TransactionService {
                     }
                     return true;
                 })
-                .filter(tx -> search.isEmpty() || tx.getAccount().toLowerCase().contains(search.toLowerCase()))
+                .filter(tx -> search.isEmpty() || tx.getAccount().toLowerCase().contains(search.toLowerCase()) || tx.getDescription().toLowerCase().contains(search.toLowerCase()))
                 .sorted(Comparator.comparing(TransactionHistoryResponse::getTransactionDate).reversed())
                 .collect(Collectors.toList());
     }
