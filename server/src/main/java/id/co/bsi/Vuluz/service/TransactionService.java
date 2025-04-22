@@ -144,37 +144,6 @@ public class TransactionService {
 //        return wallet;
 //    }
 
-//    public AddFavoriteResponse addFavoriteResponse(AddFavoriteRequest addFavoriteRequest){
-//        User user = userRepository.findById(securityUtility.getCurrentUserId()).get();
-//
-//        Wallet wallet = user.getWallet();
-//        wallet.setUpdatedAt(new Date());
-//
-//        Wallet toWallet = walletRepository.findByWalletNumber(addFavoriteRequest.getWalletNumber())
-//                .orElseThrow(() -> new RuntimeException("Wallet is not found"));
-//        toWallet.setUpdatedAt(new Date());
-//
-//        List<Favorite> listFavorite = new ArrayList<>();
-//
-//        Favorite favorite = new Favorite();
-//        favorite.setFromWallet(wallet);
-//        favorite.setToWallet(toWallet);
-//        favoriteRepository.save(favorite);
-//
-//        listFavorite.add(favorite);
-//        wallet.setFavoritesGiven(listFavorite);
-//        toWallet.setFavoritesReceived(listFavorite);
-//
-//        walletRepository.save(wallet);
-//        walletRepository.save(toWallet);
-//
-//        AddFavoriteResponse addFavoriteResponse = new AddFavoriteResponse();
-//        addFavoriteResponse.setStatus("Success");
-//        addFavoriteResponse.setMessage("Favorite is added");
-//
-//        return addFavoriteResponse;
-//    }
-
     public AddFavoriteResponse addFavoriteResponse(AddFavoriteRequest addFavoriteRequest){
         User user = userRepository.findById(securityUtility.getCurrentUserId())
                 .orElseThrow(() -> new RuntimeException("User is not found"));
