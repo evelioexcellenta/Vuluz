@@ -11,8 +11,10 @@ import id.co.bsi.Vuluz.service.UserService;
 import id.co.bsi.Vuluz.utils.JwtUtility;
 import id.co.bsi.Vuluz.utils.SecurityUtility;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -52,11 +54,17 @@ public class AuthController {
             loginResponse.setStatus("OK");
             loginResponse.setMessage("Login succeed");
             loginResponse.setToken(token);
+            return ResponseEntity.ok(loginResponse);
+        } catch (UsernameNotFoundException e) {
+            // Return 404 when email/username not found
+            loginResponse.setStatus("FAILED");
+            loginResponse.setMessage(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(loginResponse);
         } catch (Exception e) {
             loginResponse.setStatus("FAILED");
             loginResponse.setMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(loginResponse);
         }
-        return ResponseEntity.ok(loginResponse);
     }
 
 //    @GetMapping("/api/auth/profile")

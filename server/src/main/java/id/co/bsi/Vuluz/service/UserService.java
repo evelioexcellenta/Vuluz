@@ -9,8 +9,10 @@ import id.co.bsi.Vuluz.repository.WalletRepository;
 import id.co.bsi.Vuluz.utils.JwtUtility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.concurrent.ThreadLocalRandom;
@@ -91,15 +93,24 @@ public class UserService {
     }
 
     public String login(LogInRequest loginRequest) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
-        );
+        try {
+            // Check if user exists before authentication
+            User user = this.userRepository.findByEmail(loginRequest.getEmail())
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found with email " + loginRequest.getEmail()));
 
-        UserDetails userDetails = this.userDetailsService.loadUserByUsername(loginRequest.getEmail());
-        User user = this.userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found with email " + loginRequest.getEmail()));
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
+            );
 
-        return jwtUtility.generateToken(userDetails, user.getId());
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(loginRequest.getEmail());
+            return jwtUtility.generateToken(userDetails, user.getId());
+        } catch (UsernameNotFoundException e) {
+            // Re-throw the exception to be caught by the controller
+            throw e;
+        } catch (AuthenticationException e) {
+            // Authentication failed (likely wrong password)
+            throw new RuntimeException("Invalid credentials");
+        }
     }
 
 //    public Long getId (String token) {
