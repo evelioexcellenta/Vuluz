@@ -114,30 +114,18 @@ public class TransactionController {
         return ResponseEntity.ok(response);
     }
 
-//    @GetMapping("/api/transaction/history")
-//    public ResponseEntity<?> getTransactionHistory() {
-//        try {
-//            Long userId = securityUtility.getCurrentUserId();
-//
-//            List<TransactionHistoryResponse> history = transactionService.getTransactionHistory(userId);
-//            return ResponseEntity.ok(history);
-//
-//        } catch (Exception e) {
-//            return ResponseEntity.status(401).body("Invalid token or user not found");
-//        }
-//    }
-
     @GetMapping("/api/transaction/history")
     public ResponseEntity<?> getTransactionHistory(
             @RequestParam(required = false, defaultValue = "") String transactionType,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
-            @RequestParam(required = false, defaultValue = "") String search
+            @RequestParam(required = false, defaultValue = "") String search,
+            @RequestParam(required = false, defaultValue = "") String sortAmount
     ) {
         try {
             Long userId = securityUtility.getCurrentUserId();
             List<TransactionHistoryResponse> history = transactionService.getTransactionHistory(
-                    userId, transactionType, fromDate, toDate, search);
+                    userId, transactionType, fromDate, toDate, search, sortAmount);
             return ResponseEntity.ok(history);
         } catch (Exception e) {
             return ResponseEntity.status(401).body("Invalid token or user not found");

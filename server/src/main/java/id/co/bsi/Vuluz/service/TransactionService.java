@@ -248,7 +248,8 @@ public class TransactionService {
             String transactionType,
             LocalDate fromDate,
             LocalDate toDate,
-            String search
+            String search,
+            String sortAmount
     ) {
         User user = userRepository.findById(userId).orElseThrow();
         Wallet wallet = user.getWallet();
@@ -285,7 +286,15 @@ public class TransactionService {
                     return true;
                 })
                 .filter(tx -> search.isEmpty() || tx.getAccount().toLowerCase().contains(search.toLowerCase()) || tx.getDescription().toLowerCase().contains(search.toLowerCase()))
-                .sorted(Comparator.comparing(TransactionHistoryResponse::getTransactionDate).reversed())
+                .sorted((a, b) -> {
+                    if ("asc".equalsIgnoreCase(sortAmount)) {
+                        return a.getAmount().compareTo(b.getAmount());
+                    } else if ("desc".equalsIgnoreCase(sortAmount)) {
+                        return b.getAmount().compareTo(a.getAmount());
+                    } else {
+                        return b.getTransactionDate().compareTo(a.getTransactionDate()); // default
+                    }
+                })
                 .collect(Collectors.toList());
     }
 
