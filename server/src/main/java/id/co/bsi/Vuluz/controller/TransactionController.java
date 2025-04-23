@@ -119,19 +119,6 @@ public class TransactionController {
         }
     }
 
-    @GetMapping("api/summary")
-    public ResponseEntity<?> getMonthlySummary(
-            @RequestParam int month,
-            @RequestParam int year) {
 
-        Map<String, BigDecimal> summary = transactionService.getMonthlySummary(month, year);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("month", month);
-        response.put("year", year);
-        response.put("summary", summary);
-
-        return ResponseEntity.ok(response);
-    }
 
 }

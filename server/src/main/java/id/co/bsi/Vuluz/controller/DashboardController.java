@@ -1,6 +1,7 @@
 package id.co.bsi.Vuluz.controller;
 
 import id.co.bsi.Vuluz.dto.TransactionHistoryResponse;
+import id.co.bsi.Vuluz.dto.TransactionSummaryResponse;
 import id.co.bsi.Vuluz.service.DashboardService;
 import id.co.bsi.Vuluz.service.TransactionService;
 import id.co.bsi.Vuluz.service.UserService;
@@ -40,4 +41,15 @@ public class DashboardController {
             return ResponseEntity.status(401).body("Invalid token or user not found");
         }
     }
+
+    @GetMapping("/api/summary")
+    public ResponseEntity<?> getTransactionSummary() {
+        try {
+            TransactionSummaryResponse summary = dashboardService.getTransactionSummary();
+            return ResponseEntity.ok(summary);
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body("Invalid token or user not found");
+        }
+    }
+
 }

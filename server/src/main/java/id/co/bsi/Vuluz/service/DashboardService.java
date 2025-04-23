@@ -1,6 +1,7 @@
 package id.co.bsi.Vuluz.service;
 
 import id.co.bsi.Vuluz.dto.TransactionHistoryResponse;
+import id.co.bsi.Vuluz.dto.TransactionSummaryResponse;
 import id.co.bsi.Vuluz.model.Transaction;
 import id.co.bsi.Vuluz.model.User;
 import id.co.bsi.Vuluz.model.Wallet;
@@ -103,4 +104,33 @@ public class DashboardService {
     private LocalDate toLocalDate(Date date) {
         return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
     }
+
+    public TransactionSummaryResponse getTransactionSummary() {
+        Long userId = securityUtility.getCurrentUserId();
+        User user = userRepository.findById(userId).orElseThrow();
+        Wallet wallet = user.getWallet();
+        Long walletNumber = wallet.getWalletNumber();
+
+        List<Transaction> transactions = transactionRepository.findByWallet(wallet);
+
+        BigDecimal totalIncome = BigDecimal.ZERO;
+        BigDecimal totalExpense = BigDecimal.ZERO;
+
+        for (Transaction tx : transactions) {
+            String type = tx.getTransactionType();
+            if ("Top Up".equalsIgnoreCase(type)) {
+                totalIncome = totalIncome.add(tx.getAmount());
+            } else if ("Transfer In".equalsIgnoreCase(type) && walletNumber.equals(tx.getToWalletNumber())) {
+                totalIncome = totalIncome.add(tx.getAmount());
+            } else if ("Transfer Out".equalsIgnoreCase(type) && walletNumber.equals(tx.getFromWalletNumber())) {
+                totalExpense = totalExpense.add(tx.getAmount());
+            }
+        }
+
+        BigDecimal netIncome = totalIncome.subtract(totalExpense);
+
+        return new TransactionSummaryResponse(totalIncome, totalExpense, netIncome);
+    }
+
+
 }

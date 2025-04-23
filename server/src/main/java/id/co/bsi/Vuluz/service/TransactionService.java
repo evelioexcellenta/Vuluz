@@ -210,26 +210,5 @@ public class TransactionService {
         }).collect(Collectors.toList());
     }
 
-    public Map<String, BigDecimal> getMonthlySummary(int month, int year) {
-        Long userId = this.securityUtility.getCurrentUserId();
-        List<Transaction> transactions = transactionRepository.findByUserIdAndMonthYear(userId, month, year);
 
-        BigDecimal totalIncome = transactions.stream()
-                .filter(t -> "INCOME".equalsIgnoreCase(t.getTransactionType()))
-                .map(Transaction::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalExpense = transactions.stream()
-                .filter(t -> "EXPENSE".equalsIgnoreCase(t.getTransactionType()))
-                .map(Transaction::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal netIncome = totalIncome.subtract(totalExpense);
-
-        Map<String, BigDecimal> result = new HashMap<>();
-        result.put("totalIncome", totalIncome);
-        result.put("totalExpense", totalExpense);
-        result.put("netIncome", netIncome);
-        return result;
-    }
 }
