@@ -184,6 +184,32 @@ public class TransactionService {
         return response;
     }
 
+    public List<GetFavoriteResponse> getFavorites() {
+        User user = userRepository.findById(securityUtility.getCurrentUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<Favorite> favorites = user.getFavorites();
+
+        return favorites.stream().map(favorite -> {
+            GetFavoriteResponse response = new GetFavoriteResponse();
+            response.setId(favorite.getId());
+            response.setWalletNumber(favorite.getWalletNumber());
+
+            Wallet wallet = walletRepository.findByWalletNumber(favorite.getWalletNumber())
+                    .orElse(null);
+
+            if (wallet != null) {
+                response.setWalletName(wallet.getWalletName());
+                User owner = wallet.getUser();
+                if (owner != null) {
+                    response.setOwnerName(owner.getFullName());
+                }
+            }
+
+            return response;
+        }).collect(Collectors.toList());
+    }
+
     public Map<String, BigDecimal> getMonthlySummary(int month, int year) {
         Long userId = this.securityUtility.getCurrentUserId();
         List<Transaction> transactions = transactionRepository.findByUserIdAndMonthYear(userId, month, year);
@@ -206,28 +232,4 @@ public class TransactionService {
         result.put("netIncome", netIncome);
         return result;
     }
-
-//    @Transactional
-//    public List<TransactionHistoryResponse> getTransactionHistory(Long userId) {
-//        User user = userRepository.findById(userId).orElseThrow();
-//
-//        Wallet wallet = user.getWallet();
-//
-//        List<Transaction> transactions = transactionRepository.findByWallet(wallet);
-//
-//        return transactions.stream().map(tx -> {
-//            boolean isIncoming = tx.getToWalletNumber() != null && tx.getToWalletNumber().equals(wallet.getWalletNumber());
-//            String accountName = getAccountNameByWalletNumber(isIncoming ? tx.getFromWalletNumber() : tx.getToWalletNumber());
-//            BigDecimal amount = isIncoming ? tx.getAmount() : tx.getAmount().negate();
-//
-//            return new TransactionHistoryResponse(
-//                    tx.getTransactionDate(),
-//                    tx.getTransactionType(),
-//                    tx.getDescription(),
-//                    accountName,
-//                    amount
-//            );
-//        }).collect(Collectors.toList());
-//    }
-
 }

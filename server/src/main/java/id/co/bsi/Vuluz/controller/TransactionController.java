@@ -99,6 +99,26 @@ public class TransactionController {
         }
     }
 
+    @GetMapping("api/getfavorites")
+    public ResponseEntity<?> getFavorites() {
+        try {
+            List<GetFavoriteResponse> favorites = transactionService.getFavorites();
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "Success");
+            response.put("message", "Favorites retrieved successfully");
+            response.put("data", favorites);
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", "Error");
+            errorResponse.put("message", e.getMessage());
+
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
     @GetMapping("api/summary")
     public ResponseEntity<?> getMonthlySummary(
             @RequestParam int month,
