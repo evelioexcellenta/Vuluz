@@ -86,18 +86,18 @@ public class TransactionController {
         }
     }
 
-//    @DeleteMapping("/favorite/{walletNumber}")
-//    public ResponseEntity<DeleteFavoriteResponse> deleteFavorite(@PathVariable Long walletNumber){
-//        try {
-//            DeleteFavoriteResponse deleteFavoriteResponse = transactionService.deleteFavorite(walletNumber);
-//            return ResponseEntity.ok(deleteFavoriteResponse);
-//        } catch (RuntimeException e){
-//            DeleteFavoriteResponse deleteFavoriteResponse = new DeleteFavoriteResponse();
-//            deleteFavoriteResponse.setStatus("Error");
-//            deleteFavoriteResponse.setMessage(e.getMessage());
-//            return ResponseEntity.badRequest().body(deleteFavoriteResponse);
-//        }
-//    }
+    @DeleteMapping("api/favorite/delete")
+    public ResponseEntity<?> deleteFavorite(@RequestParam(required = true) Long walletNumber){
+        try {
+            DeleteFavoriteResponse deleteFavoriteResponse = transactionService.deleteFavorite(walletNumber);
+            return ResponseEntity.ok(deleteFavoriteResponse);
+        } catch (RuntimeException e){
+            DeleteFavoriteResponse deleteFavoriteResponse = new DeleteFavoriteResponse();
+            deleteFavoriteResponse.setStatus("Error");
+            deleteFavoriteResponse.setMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(deleteFavoriteResponse);
+        }
+    }
 
     @GetMapping("api/summary")
     public ResponseEntity<?> getMonthlySummary(

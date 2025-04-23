@@ -165,29 +165,24 @@ public class TransactionService {
         return addFavoriteResponse;
     }
 
-//    public DeleteFavoriteResponse deleteFavorite(Long walletNumber) {
-//        Long currentUserId = securityUtility.getCurrentUserId();
-//
-//        User user = userRepository.findById(currentUserId)
-//                .orElseThrow(() -> new RuntimeException("User is not found"));
-//
-//        Favorite favorite = favoriteRepository.findByUserAndWalletNumber(user, walletNumber)
-//                .orElseThrow(() -> new RuntimeException("Favorite not found"));
-//
-////        List<Favorite> favorites = user.getFavorites();
-////
-////        Favorite toDelete = favorites.stream()
-////                .filter(fav -> fav.getWalletNumber().equals(walletNumber))
-////                .findFirst()
-////                .orElseThrow(() -> new RuntimeException("Favorite not found"));
-//
-//        favoriteRepository.delete(favorite);
-//
-//        DeleteFavoriteResponse response = new DeleteFavoriteResponse();
-//        response.setStatus("Success");
-//        response.setMessage("Favorite has been deleted");
-//        return response;
-//    }
+    public DeleteFavoriteResponse deleteFavorite(Long walletNumber) {
+        User user = userRepository.findById(securityUtility.getCurrentUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Wallet targetWallet = walletRepository.findByWalletNumber(walletNumber)
+                .orElseThrow(() -> new RuntimeException("Target wallet not found"));
+
+        Favorite favoriteToRemove = favoriteRepository.findByUserAndWalletNumber(user, targetWallet.getWalletNumber())
+                .orElseThrow(() -> new RuntimeException("Favorite not found"));
+
+        favoriteRepository.delete(favoriteToRemove);
+
+        DeleteFavoriteResponse response = new DeleteFavoriteResponse();
+        response.setStatus("Success");
+        response.setMessage("Delete favorite success");
+
+        return response;
+    }
 
     public Map<String, BigDecimal> getMonthlySummary(int month, int year) {
         Long userId = this.securityUtility.getCurrentUserId();

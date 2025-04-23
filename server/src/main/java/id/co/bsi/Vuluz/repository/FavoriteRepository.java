@@ -9,5 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
-//    Optional<Favorite> findByUserAndWalletNumber(User user, Long walletNumber);
+    Optional<Favorite> findByUserAndWalletNumber(User user, Long walletNumber);
 }
