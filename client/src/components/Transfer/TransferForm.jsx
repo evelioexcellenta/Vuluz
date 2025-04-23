@@ -20,7 +20,8 @@ const TransferForm = ({
   const [formData, setFormData] = useState(null);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
-  
+  const [isManual, setIsManual] = useState(true);
+
   // Form validation with react-hook-form
   const { 
     register, 
