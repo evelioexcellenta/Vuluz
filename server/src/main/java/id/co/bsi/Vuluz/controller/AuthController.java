@@ -56,7 +56,6 @@ public class AuthController {
             loginResponse.setToken(token);
             return ResponseEntity.ok(loginResponse);
         } catch (UsernameNotFoundException e) {
-            // Return 404 when email/username not found
             loginResponse.setStatus("FAILED");
             loginResponse.setMessage(e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(loginResponse);

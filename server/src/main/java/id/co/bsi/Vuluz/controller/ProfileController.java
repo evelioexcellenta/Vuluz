@@ -29,6 +29,7 @@ public class ProfileController {
             ProfileResponse profileResponse = profileService.getProfileDetails();
             return ResponseEntity.ok(profileResponse);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(401).body("Invalid token or user not found");
         }
     }

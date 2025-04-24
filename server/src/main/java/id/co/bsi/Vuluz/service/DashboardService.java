@@ -2,6 +2,7 @@ package id.co.bsi.Vuluz.service;
 
 import id.co.bsi.Vuluz.dto.TransactionHistoryResponse;
 import id.co.bsi.Vuluz.dto.TransactionSummaryResponse;
+import id.co.bsi.Vuluz.dto.response.BalanceResponse;
 import id.co.bsi.Vuluz.model.Transaction;
 import id.co.bsi.Vuluz.model.User;
 import id.co.bsi.Vuluz.model.Wallet;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -52,12 +54,42 @@ public class DashboardService {
             LocalDate fromDate,
             LocalDate toDate,
             String search,
-            String sortAmount
+            String sortOrder  // "amount_asc", "amount_desc", "date_asc", "date_desc", "amount_asc_date_desc", etc.
     ) {
         User user = userRepository.findById(userId).orElseThrow();
         Wallet wallet = user.getWallet();
 
         List<Transaction> transactions = transactionRepository.findByWallet(wallet);
+
+        Comparator<TransactionHistoryResponse> comparator = null;
+
+        if (sortOrder != null) {
+            if (sortOrder.equals("amount_asc")) {
+                comparator = Comparator.comparing(TransactionHistoryResponse::getAmount);
+            } else if (sortOrder.equals("amount_desc")) {
+                comparator = Comparator.comparing(TransactionHistoryResponse::getAmount).reversed();
+            } else if (sortOrder.equals("date_asc")) {
+                comparator = Comparator.comparing(TransactionHistoryResponse::getTransactionDate);
+            } else if (sortOrder.equals("date_desc")) {
+                comparator = Comparator.comparing(TransactionHistoryResponse::getTransactionDate).reversed();
+            } else if (sortOrder.equals("amount_asc_date_desc")) {
+                comparator = Comparator.comparing(TransactionHistoryResponse::getAmount)
+                        .thenComparing(TransactionHistoryResponse::getTransactionDate, Comparator.reverseOrder());
+            } else if (sortOrder.equals("amount_desc_date_asc")) {
+                comparator = Comparator.comparing(TransactionHistoryResponse::getAmount, Comparator.reverseOrder())
+                        .thenComparing(TransactionHistoryResponse::getTransactionDate);
+            } else if (sortOrder.equals("date_asc_amount_asc")) {
+                comparator = Comparator.comparing(TransactionHistoryResponse::getTransactionDate)
+                        .thenComparing(TransactionHistoryResponse::getAmount);
+            } else if (sortOrder.equals("date_desc_amount_desc")) {
+                comparator = Comparator.comparing(TransactionHistoryResponse::getTransactionDate, Comparator.reverseOrder())
+                        .thenComparing(TransactionHistoryResponse::getAmount, Comparator.reverseOrder());
+            }
+        }
+
+        if (comparator == null) {
+            comparator = Comparator.comparing(TransactionHistoryResponse::getTransactionDate, Comparator.reverseOrder());
+        }
 
         return transactions.stream()
                 .map(tx -> {
@@ -88,21 +120,39 @@ public class DashboardService {
                     }
                     return true;
                 })
-                .filter(tx -> search.isEmpty() || tx.getAccount().toLowerCase().contains(search.toLowerCase()) || tx.getDescription().toLowerCase().contains(search.toLowerCase()))
-                .sorted((a, b) -> {
-                    if ("asc".equalsIgnoreCase(sortAmount)) {
-                        return a.getAmount().compareTo(b.getAmount());
-                    } else if ("desc".equalsIgnoreCase(sortAmount)) {
-                        return b.getAmount().compareTo(a.getAmount());
-                    } else {
-                        return b.getTransactionDate().compareTo(a.getTransactionDate()); // default
-                    }
-                })
+                .filter(tx -> search.isEmpty() || tx.getAccount().toLowerCase().
+                        contains(search.toLowerCase()) || tx.getDescription().toLowerCase().
+                        contains(search.toLowerCase()) || tx.getTransactionType().toLowerCase().
+                        contains(search.toLowerCase()) || tx.getAmount().toString().
+                        contains(search.toLowerCase()) || tx.getTransactionDate().toString().
+                        contains(search.toLowerCase()))
+                .sorted(comparator)
                 .collect(Collectors.toList());
     }
 
     private LocalDate toLocalDate(Date date) {
         return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    }
+
+    public BalanceResponse getBalance() {
+        Long currentUserId = securityUtility.getCurrentUserId();
+        User user = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Wallet wallet = user.getWallet();
+        if (wallet == null) {
+            throw new RuntimeException("Wallet not found for the user");
+        }
+
+        BalanceResponse response = new BalanceResponse();
+        response.setBalance(wallet.getBalance());
+        response.setWalletNumber(wallet.getWalletNumber());
+        response.setAccountName(user.getFullName());
+        response.setLastUpdated(wallet.getUpdatedAt());
+        response.setMessage("Balance retrieved successfully");
+        response.setStatus("Success");
+
+        return response;
     }
 
     public TransactionSummaryResponse getTransactionSummary() {

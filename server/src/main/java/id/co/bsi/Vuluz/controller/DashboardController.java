@@ -2,6 +2,7 @@ package id.co.bsi.Vuluz.controller;
 
 import id.co.bsi.Vuluz.dto.TransactionHistoryResponse;
 import id.co.bsi.Vuluz.dto.TransactionSummaryResponse;
+import id.co.bsi.Vuluz.dto.response.BalanceResponse;
 import id.co.bsi.Vuluz.service.DashboardService;
 import id.co.bsi.Vuluz.service.TransactionService;
 import id.co.bsi.Vuluz.service.UserService;
@@ -30,16 +31,22 @@ public class DashboardController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam(required = false, defaultValue = "") String search,
-            @RequestParam(required = false, defaultValue = "") String sortAmount
+            @RequestParam(required = false, defaultValue = "") String sortOrder
     ) {
         try {
             Long userId = securityUtility.getCurrentUserId();
             List<TransactionHistoryResponse> history = dashboardService.getTransactionHistory(
-                    userId, transactionType, fromDate, toDate, search, sortAmount);
+                    userId, transactionType, fromDate, toDate, search, sortOrder);
             return ResponseEntity.ok(history);
         } catch (Exception e) {
             return ResponseEntity.status(401).body("Invalid token or user not found");
         }
+    }
+
+    @GetMapping("/api/balance")
+    public ResponseEntity<BalanceResponse> getBalance() {
+        BalanceResponse response = dashboardService.getBalance();
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/api/summary")

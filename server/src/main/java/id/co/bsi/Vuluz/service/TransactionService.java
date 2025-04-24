@@ -43,6 +43,10 @@ public class TransactionService {
     public TransferResponse transfer(TransferRequest transferRequest) {
 //        Wallet fromWallet = walletRepository.findByWalletNumber(transferRequest.getFromWalletNumber())
 //                .orElseThrow(() -> new RuntimeException("Sender wallet number is not found"));
+        if (transferRequest.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Transfer amount must be greater than 0");
+        }
+
         User user = userRepository.findById(securityUtility.getCurrentUserId()).get();
         Wallet fromWallet = user.getWallet();
 
@@ -95,6 +99,10 @@ public class TransactionService {
     public TopUpResponse topup(TopUpRequest topUpRequest){
 //        Wallet wallet = walletRepository.findByWalletNumber(topUpRequest.getWalletNumber())
 //                .orElseThrow(() -> new RuntimeException("Wallet is not found"));
+        if (topUpRequest.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Top-up amount must be greater than 0");
+        }
+
         User user = userRepository.findById(securityUtility.getCurrentUserId()).get();
         Wallet wallet = user.getWallet();
 

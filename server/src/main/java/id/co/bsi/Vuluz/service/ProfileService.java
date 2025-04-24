@@ -30,7 +30,7 @@ public class ProfileService {
         profileResponse.setAvatarUrl(user.getAvatarUrl());
         profileResponse.setGender(user.getGender());
 
-        Wallet wallet = walletRepository.findById(userId).orElseThrow();
+        Wallet wallet = walletRepository.findByUserId(userId).orElseThrow();
         profileResponse.setWalletName(wallet.getWalletName());
         profileResponse.setWalletNumber(wallet.getWalletNumber());
         profileResponse.setWalletBalance(wallet.getBalance());

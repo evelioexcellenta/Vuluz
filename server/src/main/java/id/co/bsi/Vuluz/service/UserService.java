@@ -105,18 +105,10 @@ public class UserService {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(loginRequest.getEmail());
             return jwtUtility.generateToken(userDetails, user.getId());
         } catch (UsernameNotFoundException e) {
-            // Re-throw the exception to be caught by the controller
             throw e;
         } catch (AuthenticationException e) {
-            // Authentication failed (likely wrong password)
             throw new RuntimeException("Invalid credentials");
         }
     }
-
-//    public Long getId (String token) {
-//        return jwtUtility.extractUserId(token);
-//    }
-//
-//    public User getProfile(Long id)
 
 }
