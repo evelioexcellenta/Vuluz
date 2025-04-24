@@ -12,7 +12,7 @@ import { formatCurrency } from '../../utils/formatters';
 const TransferForm = ({ 
   onSubmit, 
   isLoading = false,
-  maxTransferAmount = 10000,
+  maxTransferAmount = 99999999,
   minTransferAmount = 1,
   className = '' 
 }) => {

@@ -17,5 +17,9 @@ export const APP_CONFIG = {
     { id: 'debit-card', name: 'Debit Card' },
     { id: 'bank-transfer', name: 'Bank Transfer' },
     { id: 'paypal', name: 'PayPal' }
+  ],
+  GENDER:[
+    { id: 'male', name: 'Male' },
+    { id: 'female', name: 'Female' },
   ]
 };

@@ -131,30 +131,13 @@ export const TransactionProvider = ({ children }) => {
     setError(null);
 
     try {
-      // In a real app, send to API
-      // For demo, simulate a server response
-      const newTransaction = await new Promise((resolve) => {
-        setTimeout(() => {
-          const tx = {
-            id: `tx_${Date.now()}`,
-            type: APP_CONFIG.TRANSACTION_TYPES.TOP_UP,
-            amount: Number(topUpData.amount),
-            date: new Date(),
-            description:
-              topUpData.description || `Top-up via ${topUpData.method}`,
-            account: topUpData.method,
-            accountId: null,
-          };
+      // const response = await transactionAPI.topUp({
+      //   amount: topUpData.amount,
+      //   paymentMethod: topUpData.paymentMethod,
+      //   description: topUpData.description,
+      // });
 
-          resolve(tx);
-        }, 1000);
-      });
-
-      // Update state with new transaction
-      setTransactions((prev) => [newTransaction, ...prev]);
-      setBalance((prev) => prev + Number(topUpData.amount));
-
-      return { success: true, transaction: newTransaction };
+      return { success: true };
     } catch (err) {
       setError(err.message || "Top-up failed. Please try again.");
       return { success: false, error: err.message };
