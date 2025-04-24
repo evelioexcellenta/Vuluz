@@ -1,8 +1,10 @@
 package id.co.bsi.Vuluz.controller;
 
+import id.co.bsi.Vuluz.dto.TransactionSummaryResponse;
 import id.co.bsi.Vuluz.dto.response.ProfileResponse;
 import id.co.bsi.Vuluz.model.User;
 import id.co.bsi.Vuluz.repository.UserRepository;
+import id.co.bsi.Vuluz.service.ProfileService;
 import id.co.bsi.Vuluz.utils.JwtUtility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -12,36 +14,26 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/profile")
 public class ProfileController {
 
     @Autowired
     private UserRepository userRepository;
 
+
     @Autowired
-    private JwtUtility jwtUtility;
+    private ProfileService profileService;
 
-    @GetMapping
-    public ResponseEntity<?> getProfile(Authentication authentication) {
-        String email = authentication.getName();
-        Optional<User> userOptional = userRepository.findByEmail(email);
-
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.notFound().build();
+    @GetMapping("api/profile")
+    public ResponseEntity<?> getProfile() {
+        try{
+            ProfileResponse profileResponse = profileService.getProfileDetails();
+            return ResponseEntity.ok(profileResponse);
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body("Invalid token or user not found");
         }
-
-        User user = userOptional.get();
-
-        return ResponseEntity.ok(new ProfileResponse(
-                user.getFullName(),
-                user.getUserName(),
-                user.getEmail(),
-                user.getGender(),
-                user.getAvatarUrl()
-        ));
     }
 
-    @PutMapping("/avatar")
+    @PutMapping("api/avatar")
     public ResponseEntity<?> updateAvatar(@RequestParam String avatarUrl, Authentication authentication) {
         String email = authentication.getName();
         Optional<User> userOptional = userRepository.findByEmail(email);
