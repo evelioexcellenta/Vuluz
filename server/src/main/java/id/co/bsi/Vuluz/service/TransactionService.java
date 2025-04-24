@@ -43,6 +43,10 @@ public class TransactionService {
     public TransferResponse transfer(TransferRequest transferRequest) {
 //        Wallet fromWallet = walletRepository.findByWalletNumber(transferRequest.getFromWalletNumber())
 //                .orElseThrow(() -> new RuntimeException("Sender wallet number is not found"));
+        if (transferRequest.getAmount() == null) {
+            throw new RuntimeException("Transfer amount is required");
+        }
+
         if (transferRequest.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("Transfer amount must be greater than 0");
         }

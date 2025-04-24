@@ -45,6 +45,26 @@ public class UserService {
 
     public User register(RegisterRequest registerRequest) {
 
+        if (registerRequest.getEmail() == null || registerRequest.getEmail().trim().isEmpty()) {
+            throw new RuntimeException("Email is required");
+        }
+
+        if (registerRequest.getUserName() == null || registerRequest.getUserName().trim().isEmpty()) {
+            throw new RuntimeException("Username is required");
+        }
+
+        if (registerRequest.getFullName() == null || registerRequest.getFullName().trim().isEmpty()) {
+            throw new RuntimeException("Full name is required");
+        }
+
+        if (registerRequest.getPassword() == null || registerRequest.getPassword().trim().isEmpty()) {
+            throw new RuntimeException("Password is required");
+        }
+
+        if (registerRequest.getGender() == null || registerRequest.getGender().trim().isEmpty()) {
+            throw new RuntimeException("Gender is required");
+        }
+
         Optional<User> checkUserByEmail = this.userRepository.findByEmail(registerRequest.getEmail());
 
         if (checkUserByEmail.isPresent()) {
@@ -58,21 +78,6 @@ public class UserService {
         users.setFullName(registerRequest.getFullName());
         users.setGender(registerRequest.getGender());
 
-//        List<Wallet> listWallets = new ArrayList<>();
-//
-//        Wallet wallets = new Wallet();
-//        wallets.setUser(users);
-//        long randomWalletNumber = ThreadLocalRandom.current().nextLong(100000, 1000000); // 6 digit
-//        wallets.setWalletNumber(randomWalletNumber);
-//        wallets.setBalance(BigDecimal.valueOf(0));
-//        wallets.setWalletName("Main Pocket");
-//        wallets.setCreatedAt(new Date());
-//        wallets.setUpdatedAt(new Date());
-//
-//        listWallets.add(wallets);
-//
-//        users.setWallets(listWallets);
-
         Wallet wallet = new Wallet();
         wallet.setUser(users);
 
@@ -82,7 +87,7 @@ public class UserService {
         } while (walletRepository.findByWalletNumber(randomWalletNumber).isPresent());
 
         wallet.setWalletNumber(randomWalletNumber);
-        wallet.setBalance(BigDecimal.valueOf(0));
+        wallet.setBalance(BigDecimal.ZERO);
         wallet.setWalletName("Main Pocket");
         wallet.setCreatedAt(new Date());
         wallet.setUpdatedAt(new Date());
@@ -91,6 +96,7 @@ public class UserService {
 
         return this.userRepository.save(users);
     }
+
 
     public String login(LogInRequest loginRequest) {
         try {

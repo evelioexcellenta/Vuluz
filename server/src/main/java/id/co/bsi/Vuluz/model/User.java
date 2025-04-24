@@ -2,6 +2,7 @@ package id.co.bsi.Vuluz.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.antlr.v4.runtime.misc.NotNull;
 
 import java.util.List;
 
@@ -15,9 +16,13 @@ public class User {
     private Long id;
 
     private String email;
+
     private String userName;
+
     private String fullName;
+
     private String password;
+
     private String gender;
     private String avatarUrl;
 
