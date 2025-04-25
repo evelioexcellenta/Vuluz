@@ -14,6 +14,7 @@ import id.co.bsi.Vuluz.repository.WalletRepository;
 import id.co.bsi.Vuluz.utils.SecurityUtility;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -40,9 +41,26 @@ public class TransactionService {
     @Autowired
     private FavoriteRepository favoriteRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+
     public TransferResponse transfer(TransferRequest transferRequest) {
-//        Wallet fromWallet = walletRepository.findByWalletNumber(transferRequest.getFromWalletNumber())
-//                .orElseThrow(() -> new RuntimeException("Sender wallet number is not found"));
+        User user = userRepository.findById(securityUtility.getCurrentUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if(transferRequest.getPin() == null){
+            throw new RuntimeException("Input your pin");
+        }
+
+        if (!passwordEncoder.matches(transferRequest.getPin(), user.getPin())) {
+            throw new RuntimeException("Invalid PIN");
+        }
+
+        if(transferRequest.getToWalletNumber() == null){
+            throw new RuntimeException("Input wallet number");
+        }
+
         if (transferRequest.getAmount() == null) {
             throw new RuntimeException("Transfer amount is required");
         }
@@ -51,7 +69,6 @@ public class TransactionService {
             throw new RuntimeException("Transfer amount must be greater than 0");
         }
 
-        User user = userRepository.findById(securityUtility.getCurrentUserId()).get();
         Wallet fromWallet = user.getWallet();
 
         Wallet toWallet = walletRepository.findByWalletNumber(transferRequest.getToWalletNumber())
@@ -101,13 +118,21 @@ public class TransactionService {
     }
 
     public TopUpResponse topup(TopUpRequest topUpRequest){
-//        Wallet wallet = walletRepository.findByWalletNumber(topUpRequest.getWalletNumber())
-//                .orElseThrow(() -> new RuntimeException("Wallet is not found"));
+        User user = userRepository.findById(securityUtility.getCurrentUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if(topUpRequest.getPin() == null){
+            throw new RuntimeException("Input pin is required");
+        }
+
+        if (!passwordEncoder.matches(topUpRequest.getPin(), user.getPin())) {
+            throw new RuntimeException("Invalid PIN");
+        }
+
         if (topUpRequest.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("Top-up amount must be greater than 0");
         }
 
-        User user = userRepository.findById(securityUtility.getCurrentUserId()).get();
         Wallet wallet = user.getWallet();
 
         wallet.setBalance(wallet.getBalance().add(topUpRequest.getAmount()));

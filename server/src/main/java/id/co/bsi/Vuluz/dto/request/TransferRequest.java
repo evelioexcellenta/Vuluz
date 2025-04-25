@@ -10,4 +10,5 @@ public class TransferRequest {
     private Long toWalletNumber;
     private BigDecimal amount;
     private String notes;
+    private String pin;
 }

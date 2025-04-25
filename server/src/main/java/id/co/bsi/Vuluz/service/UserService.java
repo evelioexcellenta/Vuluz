@@ -77,6 +77,7 @@ public class UserService {
         users.setUserName(registerRequest.getUserName());
         users.setFullName(registerRequest.getFullName());
         users.setGender(registerRequest.getGender());
+        users.setPin(passwordEncoder.encode(registerRequest.getPin()));
 
         Wallet wallet = new Wallet();
         wallet.setUser(users);
