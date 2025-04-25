@@ -71,6 +71,10 @@ public class UserService {
             throw new RuntimeException("Email already exists");
         }
 
+        if (registerRequest.getPin() == null){
+            throw new RuntimeException("Create your pin");
+        }
+
         User users = new User();
         users.setEmail(registerRequest.getEmail());
         users.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
