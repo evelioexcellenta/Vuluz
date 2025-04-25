@@ -61,6 +61,14 @@ public class UserService {
             throw new RuntimeException("Password is required");
         }
 
+        if (registerRequest.getPassword().length() < 8 ||
+                !registerRequest.getPassword().matches(".*[A-Z].*") ||
+                !registerRequest.getPassword().matches(".*[a-z].*") ||
+                !registerRequest.getPassword().matches(".*[0-9].*"))
+        {
+            throw new RuntimeException("Password must be at least 8 characters and contain uppercase, lowercase, and number");
+        }
+
         if (registerRequest.getGender() == null || registerRequest.getGender().trim().isEmpty()) {
             throw new RuntimeException("Gender is required");
         }
@@ -71,8 +79,16 @@ public class UserService {
             throw new RuntimeException("Email already exists");
         }
 
+        if (!(registerRequest.getEmail().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$"))) {
+            throw new RuntimeException("Invalid email format");
+        }
+
         if (registerRequest.getPin() == null){
             throw new RuntimeException("Create your pin");
+        }
+
+        if (!registerRequest.getPin().matches("\\d{6}")) {
+            throw new RuntimeException("PIN must be 6 numeric digits");
         }
 
         User users = new User();

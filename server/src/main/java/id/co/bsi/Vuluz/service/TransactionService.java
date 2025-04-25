@@ -44,6 +44,8 @@ public class TransactionService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    final BigDecimal minimumTopup = BigDecimal.valueOf(10000);
+
 
     public TransferResponse transfer(TransferRequest transferRequest) {
         User user = userRepository.findById(securityUtility.getCurrentUserId())
@@ -57,6 +59,12 @@ public class TransactionService {
             throw new RuntimeException("Invalid PIN");
         }
 
+        Wallet fromWallet = user.getWallet();
+
+        if(Objects.equals(transferRequest.getToWalletNumber(), fromWallet.getWalletNumber())){
+            throw new RuntimeException("You cant transfer to yourself");
+        }
+
         if(transferRequest.getToWalletNumber() == null){
             throw new RuntimeException("Input wallet number");
         }
@@ -65,11 +73,8 @@ public class TransactionService {
             throw new RuntimeException("Transfer amount is required");
         }
 
-        if (transferRequest.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Transfer amount must be greater than 0");
-        }
 
-        Wallet fromWallet = user.getWallet();
+
 
         Wallet toWallet = walletRepository.findByWalletNumber(transferRequest.getToWalletNumber())
                 .orElseThrow(() -> new RuntimeException("Receiver wallet number is not found"));
@@ -129,8 +134,16 @@ public class TransactionService {
             throw new RuntimeException("Invalid PIN");
         }
 
-        if (topUpRequest.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Top-up amount must be greater than 0");
+        if(topUpRequest.getPaymentMethod() == null || topUpRequest.getPaymentMethod().isEmpty()){
+            throw new RuntimeException("Payment method is required");
+        }
+
+        if (topUpRequest.getAmount() == null) {
+            throw new RuntimeException("Top up amount is required");
+        }
+
+        if (topUpRequest.getAmount().compareTo(minimumTopup) < 0) {
+            throw new RuntimeException("Top-up amount must be greater than Rp.10.000");
         }
 
         Wallet wallet = user.getWallet();
@@ -142,8 +155,6 @@ public class TransactionService {
         Transaction transaction = new Transaction();
         transaction.setTransactionType("Top Up");
         transaction.setAmount(topUpRequest.getAmount());
-//        transaction.setFromWalletNumber(topUpRequest.getWalletNumber());
-//        transaction.setToWalletNumber(topUpRequest.getWalletNumber());
         transaction.setFromWalletNumber(wallet.getWalletNumber());
         transaction.setToWalletNumber(wallet.getWalletNumber());
         transaction.setTransactionDate(new Date());
