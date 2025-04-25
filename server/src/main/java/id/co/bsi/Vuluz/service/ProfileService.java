@@ -1,5 +1,7 @@
 package id.co.bsi.Vuluz.service;
 
+import id.co.bsi.Vuluz.dto.request.EditProfileRequest;
+import id.co.bsi.Vuluz.dto.response.EditProfileResponse;
 import id.co.bsi.Vuluz.dto.response.ProfileResponse;
 import id.co.bsi.Vuluz.model.User;
 import id.co.bsi.Vuluz.model.Wallet;
@@ -36,6 +38,15 @@ public class ProfileService {
         profileResponse.setWalletBalance(wallet.getBalance());
 
         return profileResponse;
+    }
+
+    public User editProfiles(EditProfileRequest editProfileRequest) {
+        Long userId = securityUtility.getCurrentUserId();
+        User user = userRepository.findById(userId).orElseThrow();
+        user.setFullName(editProfileRequest.getFullName());
+        user.setUserName(editProfileRequest.getUserName());
+
+        return this.userRepository.save(user);
     }
 
 }
