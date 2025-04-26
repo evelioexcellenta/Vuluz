@@ -56,21 +56,31 @@ export const authAPI = {
 
   logout: () => apiRequest("/auth/logout", { method: "POST" }),
 
-  getProfile: () => console.log("profile nunggu BE"),
-  // apiRequest('/api/auth/profile')
+  getProfile: () => 
+  apiRequest('/api/profile')
 };
 
 // Transaction API calls
 export const transactionAPI = {
   getBalance: () => apiRequest("/transactions/balance"),
 
-  getHistory: (params = {}) =>
-    apiRequest(`/transactions/history?${new URLSearchParams(params)}`),
+  getHistory: (params = {}) => {
+    // Convert params to URL search params
+    const searchParams = new URLSearchParams();
+    
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== "") {
+        searchParams.append(key, params[key]);
+      }
+    });
+    
+    return apiRequest(`/api/history?${searchParams.toString()}`);
+  },
 
   getTransactionById: (id) => apiRequest(`/transactions/${id}`),
 
   transfer: (transferData) =>
-    apiRequest("/transactions/transfer", {
+    apiRequest("/api/transfer", {
       method: "POST",
       body: JSON.stringify(transferData),
     }),
@@ -82,8 +92,7 @@ export const transactionAPI = {
     }),
 };
 
-// For demonstration purposes, we'll mock the API
-// In a real application, you'd remove this
+
 export const mockAPI = {
   // Mock user data
   user: {

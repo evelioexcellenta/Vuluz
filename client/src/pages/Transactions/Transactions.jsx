@@ -13,7 +13,8 @@ const Transactions = () => {
     isLoading, 
     filters,
     applyFilters, 
-    clearFilters 
+    clearFilters ,
+    sortTransactions     
   } = useTransactions();
   
   const [selectedTransaction, setSelectedTransaction] = useState(null);
@@ -51,6 +52,7 @@ const Transactions = () => {
               isLoading={isLoading}
               onViewTransaction={handleViewTransaction}
               itemsPerPage={10}
+              onSortChange={sortTransactions}   
             />
           </Card.Body>
         </Card>

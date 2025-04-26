@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
+import useTransactions from '../../hooks/useTransactions';
 
 const Table = ({
   columns,
@@ -8,14 +9,16 @@ const Table = ({
   emptyMessage = 'No data available',
   onRowClick = null,
   sortable = false,
+  onSort = null, // Add this prop
   className = ''
 }) => {
+  const { applySort } = useTransactions(); // Get the applySort function
   const [sortConfig, setSortConfig] = useState({
     key: null,
     direction: 'asc'
   });
   
-  // Handle sorting
+  // Handle sorting - modified to call the backend
   const handleSort = (key) => {
     if (!sortable) return;
     
@@ -23,24 +26,16 @@ const Table = ({
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
     }
+    
     setSortConfig({ key, direction });
+    
+    // Call the custom sort handler if provided
+    if (onSort) {
+      onSort(key, direction);
+    }
   };
   
-  // Sort data if sortConfig is set
-  const sortedData = useMemo(() => {
-    if (!sortConfig.key) return data;
-    
-    return [...data].sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) {
-        return sortConfig.direction === 'asc' ? -1 : 1;
-      }
-      if (a[sortConfig.key] > b[sortConfig.key]) {
-        return sortConfig.direction === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
-  }, [data, sortConfig]);
-  
+
   return (
     <div className={`overflow-hidden rounded-lg border border-gray-200 ${className}`}>
       <div className="overflow-x-auto">
@@ -89,8 +84,8 @@ const Table = ({
                   </div>
                 </td>
               </tr>
-            ) : sortedData.length > 0 ? (
-              sortedData.map((row, rowIndex) => (
+            ) : data.length > 0 ? (
+              data.map((row, rowIndex) => (
                 <tr
                   key={row.id || rowIndex}
                   className={onRowClick ? 'cursor-pointer hover:bg-gray-50' : ''}
@@ -134,7 +129,8 @@ Table.propTypes = {
   emptyMessage: PropTypes.string,
   onRowClick: PropTypes.func,
   sortable: PropTypes.bool,
-  className: PropTypes.string
+  className: PropTypes.string,
+  onSort: PropTypes.func, // Add this prop type
 };
 
 export default Table;

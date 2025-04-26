@@ -9,8 +9,6 @@ export const APP_CONFIG = {
     TRANSFER_IN: 'TRANSFER_IN',
     TRANSFER_OUT: 'TRANSFER_OUT',
     TOP_UP: 'TOP_UP',
-    PAYMENT: 'PAYMENT',
-    REFUND: 'REFUND'
   },
   PAYMENT_METHODS: [
     { id: 'credit-card', name: 'Credit Card' },

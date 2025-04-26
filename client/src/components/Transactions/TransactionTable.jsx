@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import Table from '../UI/Table';
 import Pagination from '../UI/Pagination';
 import { formatDate, formatCurrency, getTransactionTypeLabel, getTransactionBadgeClass } from '../../utils/formatters';
+import useTransactions from '../../hooks/useTransactions';
 
 const TransactionTable = ({ 
   transactions = [], 
@@ -12,6 +13,7 @@ const TransactionTable = ({
   className = ''
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
+  const { applySort } = useTransactions(); // Get the applySort function
   
   // Compute total pages
   const totalPages = Math.ceil(transactions.length / itemsPerPage);
@@ -25,6 +27,11 @@ const TransactionTable = ({
   // Handle page change
   const handlePageChange = (page) => {
     setCurrentPage(page);
+  };
+  const handleSort = (key, direction) => {
+    // Map the frontend column key to backend sort key if needed
+    const backendKey = key === 'date' ? 'date' : key;
+    applySort(backendKey, direction);
   };
   
   // Define table columns
@@ -78,6 +85,7 @@ const TransactionTable = ({
         isLoading={isLoading}
         onRowClick={onViewTransaction}
         sortable={true}
+        onSort={handleSort} // Pass the sort handler
         emptyMessage="No transactions found."
       />
       

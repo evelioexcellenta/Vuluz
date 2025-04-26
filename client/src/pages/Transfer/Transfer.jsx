@@ -9,7 +9,7 @@ const Transfer = () => {
   const [transferMode, setTransferMode] = useState('favorites'); // 'favorites' or 'manual'
   const { createTransfer, isLoading } = useTransactions();
   
-  // Handle transfer form submission
+  // Handle tranasfer form submission
   const handleTransfer = async (transferData) => {
     return await createTransfer(transferData);
   };

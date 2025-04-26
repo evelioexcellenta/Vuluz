@@ -13,7 +13,7 @@ const useBalance = () => {
   
   // Calculate formatted values
   const formattedBalance = useMemo(() => 
-    formatCurrency(user?.balance || 0), [user?.balance]);
+    formatCurrency(user?.walletBalance || 0), [user?.walletBalance]);
   
   
   const formattedMonthlyTopUps = useMemo(() => 
