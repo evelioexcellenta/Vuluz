@@ -53,7 +53,11 @@ export const TransactionProvider = ({ children }) => {
           monthlyTopUps: summaryData.totalIncome || 0,
           monthlyTransfersOut: summaryData.totalExpense || 0,
           monthlyExpenses: summaryData.netIncome || 0,
+          currentBalance: summaryData.currentBalance || 0,
+          previousMonthBalance: summaryData.previousMonthBalance || 0,
+          balanceChange: summaryData.balanceChange || 0,
         });
+        
   
       } catch (err) {
         setError(err.message || "Failed to load transaction data");

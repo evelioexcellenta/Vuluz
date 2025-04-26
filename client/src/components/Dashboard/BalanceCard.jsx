@@ -9,7 +9,7 @@ const BalanceCard = ({ className = "" }) => {
   const [hideBalance, setHideBalance] = useState(false);
   const { formattedBalance, balance, balanceChangePercent, isLoading } =
     useBalance();
-
+console.log("BalanceCard", { balance, formattedBalance, balanceChangePercent, isLoading });
   // Toggle balance visibility
   const toggleBalance = () => {
     setHideBalance(!hideBalance);
