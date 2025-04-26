@@ -19,7 +19,6 @@ public class SecurityUtility {
             String token = authHeader.substring(7);
             return this.jwtUtility.extractUserId(token);
         }
-
         return null;
     }
 }

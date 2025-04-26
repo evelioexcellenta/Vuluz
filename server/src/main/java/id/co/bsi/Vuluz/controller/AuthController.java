@@ -67,47 +67,4 @@ public class AuthController {
         }
     }
 
-//    @GetMapping("/api/auth/profile")
-//    public ResponseEntity<UserProfileResponse> getProfile(@RequestHeader("Authorization") String authHeader) {
-//        try {
-//            String token = authHeader.replace("Bearer ", "");
-//            String email = userDetailsService.get(token);
-//            User user = usersService.getUserByEmail(email);
-//
-//            // Ambil wallet pertama
-//            Long walletNumber = null;
-//            BigDecimal balance = null;
-//            String walletName = null;
-//            if (user.getWallets() != null && !user.getWallets().isEmpty()) {
-//                Wallet defaultWallet = user.getWallets().get(0);
-//                walletNumber = defaultWallet.getWalletNumber();
-//                balance = defaultWallet.getBalance();
-//                walletName = defaultWallet.getWalletName();
-//            }
-//
-//            UserProfileResponse response = new UserProfileResponse(
-//                    "OK",
-//                    "User profile fetched",
-//                    user.getId(),
-//                    user.getEmail(),
-//                    user.getUserName(),
-//                    user.getFullName(),
-//                    user.getGender(),
-//                    user.getAvatarUrl(),
-//                    walletNumber,
-//                    balance,
-//                    walletName
-//            );
-//
-//            return ResponseEntity.ok(response);
-//        } catch (Exception e) {
-//            return ResponseEntity.status(401).body(
-//                    new UserProfileResponse("FAILED", "Invalid token",
-//                            null, null, null, null, null, null,
-//                            null, null, null)
-//            );
-//        }
-//    }
-
-
 }

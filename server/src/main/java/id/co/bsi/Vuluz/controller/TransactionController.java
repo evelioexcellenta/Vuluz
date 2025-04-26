@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:5173") // <--- tambahkan ini
 public class TransactionController {
     @Autowired
     private TransactionService transactionService;
@@ -104,6 +105,18 @@ public class TransactionController {
 
             return ResponseEntity.badRequest().body(errorResponse);
         }
+    }
+
+    @GetMapping("/api/wallet/owner/{walletNumber}")
+    public ResponseEntity<?> getOwnerByWalletNumber(@PathVariable Long walletNumber) {
+        Wallet wallet = walletRepository.findByWalletNumber(walletNumber)
+                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+
+        User user = wallet.getUser();
+
+        Map<String, String> response = new HashMap<>();
+        response.put("fullName", user.getFullName());
+        return ResponseEntity.ok(response);
     }
 
 }
