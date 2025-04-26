@@ -59,19 +59,6 @@ public class TransactionController {
         }
     }
 
-//    @PostMapping("api/wallets")
-//    public ResponseEntity<CreateWalletResponse> createWallet(@RequestBody CreateWalletRequest createWalletRequest){
-//        CreateWalletResponse createWalletResponse = new CreateWalletResponse();
-//        try {
-//            Wallet newWallet = this.transactionService.createWallet(createWalletRequest);
-//            createWalletResponse.setStatus("OK");
-//            createWalletResponse.setMessage("New wallet is created");
-//        } catch (Exception e) {
-//            createWalletResponse.setStatus("FAILED");
-//            createWalletResponse.setMessage(e.getMessage());
-//        }
-//        return ResponseEntity.ok(createWalletResponse);
-//    }
 
     @PostMapping("api/favorite")
     public ResponseEntity<AddFavoriteResponse> addFavorite(@RequestBody AddFavoriteRequest addFavoriteRequest){

@@ -9,4 +9,5 @@ public class RegisterRequest {
     private String fullName;
     private String userName;
     private String gender;
+    private String pin;
 }

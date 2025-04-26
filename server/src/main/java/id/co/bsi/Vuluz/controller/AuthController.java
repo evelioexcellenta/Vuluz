@@ -37,13 +37,14 @@ public class AuthController {
 
             registerResponse.setStatus("OK");
             registerResponse.setMessage("Register succeed");
-
+            return ResponseEntity.ok(registerResponse);
         } catch (Exception e) {
 
             registerResponse.setStatus("FAILED");
             registerResponse.setMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(registerResponse);
         }
-        return ResponseEntity.ok(registerResponse);
+
     }
 
     @PostMapping("/api/auth/login")
@@ -57,11 +58,11 @@ public class AuthController {
             return ResponseEntity.ok(loginResponse);
         } catch (UsernameNotFoundException e) {
             loginResponse.setStatus("FAILED");
-            loginResponse.setMessage(e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(loginResponse);
+            loginResponse.setMessage("Email not found");
+            return ResponseEntity.badRequest().body(loginResponse);
         } catch (Exception e) {
             loginResponse.setStatus("FAILED");
-            loginResponse.setMessage(e.getMessage());
+            loginResponse.setMessage("Password incorrect");
             return ResponseEntity.badRequest().body(loginResponse);
         }
     }

@@ -14,6 +14,7 @@ import id.co.bsi.Vuluz.repository.WalletRepository;
 import id.co.bsi.Vuluz.utils.SecurityUtility;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -40,19 +41,40 @@ public class TransactionService {
     @Autowired
     private FavoriteRepository favoriteRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    final BigDecimal minimumTopup = BigDecimal.valueOf(10000);
+
+
     public TransferResponse transfer(TransferRequest transferRequest) {
-//        Wallet fromWallet = walletRepository.findByWalletNumber(transferRequest.getFromWalletNumber())
-//                .orElseThrow(() -> new RuntimeException("Sender wallet number is not found"));
+        User user = userRepository.findById(securityUtility.getCurrentUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if(transferRequest.getPin() == null){
+            throw new RuntimeException("Input your pin");
+        }
+
+        if (!passwordEncoder.matches(transferRequest.getPin(), user.getPin())) {
+            throw new RuntimeException("Invalid PIN");
+        }
+
+        Wallet fromWallet = user.getWallet();
+
+        if(Objects.equals(transferRequest.getToWalletNumber(), fromWallet.getWalletNumber())){
+            throw new RuntimeException("You cant transfer to yourself");
+        }
+
+        if(transferRequest.getToWalletNumber() == null){
+            throw new RuntimeException("Input wallet number");
+        }
+
         if (transferRequest.getAmount() == null) {
             throw new RuntimeException("Transfer amount is required");
         }
 
-        if (transferRequest.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Transfer amount must be greater than 0");
-        }
 
-        User user = userRepository.findById(securityUtility.getCurrentUserId()).get();
-        Wallet fromWallet = user.getWallet();
+
 
         Wallet toWallet = walletRepository.findByWalletNumber(transferRequest.getToWalletNumber())
                 .orElseThrow(() -> new RuntimeException("Receiver wallet number is not found"));
@@ -101,13 +123,29 @@ public class TransactionService {
     }
 
     public TopUpResponse topup(TopUpRequest topUpRequest){
-//        Wallet wallet = walletRepository.findByWalletNumber(topUpRequest.getWalletNumber())
-//                .orElseThrow(() -> new RuntimeException("Wallet is not found"));
-        if (topUpRequest.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Top-up amount must be greater than 0");
+        User user = userRepository.findById(securityUtility.getCurrentUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if(topUpRequest.getPin() == null){
+            throw new RuntimeException("Input pin is required");
         }
 
-        User user = userRepository.findById(securityUtility.getCurrentUserId()).get();
+        if (!passwordEncoder.matches(topUpRequest.getPin(), user.getPin())) {
+            throw new RuntimeException("Invalid PIN");
+        }
+
+        if(topUpRequest.getPaymentMethod() == null || topUpRequest.getPaymentMethod().isEmpty()){
+            throw new RuntimeException("Payment method is required");
+        }
+
+        if (topUpRequest.getAmount() == null) {
+            throw new RuntimeException("Top up amount is required");
+        }
+
+        if (topUpRequest.getAmount().compareTo(minimumTopup) < 0) {
+            throw new RuntimeException("Top-up amount must be greater than Rp.10.000");
+        }
+
         Wallet wallet = user.getWallet();
 
         wallet.setBalance(wallet.getBalance().add(topUpRequest.getAmount()));
@@ -117,8 +155,6 @@ public class TransactionService {
         Transaction transaction = new Transaction();
         transaction.setTransactionType("Top Up");
         transaction.setAmount(topUpRequest.getAmount());
-//        transaction.setFromWalletNumber(topUpRequest.getWalletNumber());
-//        transaction.setToWalletNumber(topUpRequest.getWalletNumber());
         transaction.setFromWalletNumber(wallet.getWalletNumber());
         transaction.setToWalletNumber(wallet.getWalletNumber());
         transaction.setTransactionDate(new Date());
