@@ -43,8 +43,13 @@ public class ProfileService {
     public User editProfiles(EditProfileRequest editProfileRequest) {
         Long userId = securityUtility.getCurrentUserId();
         User user = userRepository.findById(userId).orElseThrow();
-        user.setFullName(editProfileRequest.getFullName());
-        user.setUserName(editProfileRequest.getUserName());
+
+        if(!(editProfileRequest.getFullName() == null || editProfileRequest.getFullName().isEmpty())){
+            user.setFullName(editProfileRequest.getFullName());
+        }
+        if(!(editProfileRequest.getUserName() == null || editProfileRequest.getUserName().isEmpty())){
+            user.setUserName(editProfileRequest.getUserName());
+        }
 
         return this.userRepository.save(user);
     }

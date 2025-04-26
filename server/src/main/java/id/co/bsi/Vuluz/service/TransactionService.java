@@ -198,6 +198,12 @@ public class TransactionService {
         boolean alreadyFavorited = listFavorite.stream()
                 .anyMatch(fav -> fav.getWalletNumber().equals(walletNumberToAdd));
 
+        Wallet userWallet = user.getWallet();
+
+        if (addFavoriteRequest.getWalletNumber().equals(userWallet.getWalletNumber())) {
+            throw new RuntimeException("You cannot add your own wallet number");
+        }
+
         if (alreadyFavorited) {
             throw new RuntimeException("Wallet number already added to favorites");
         }
@@ -207,7 +213,10 @@ public class TransactionService {
         favorite.setUser(user);
         favoriteRepository.save(favorite);
 
+        User userFavorite = userRepository.findByWallet_WalletNumber(addFavoriteRequest.getWalletNumber())
+                .orElseThrow(() -> new RuntimeException("User favorite is not found"));;
         AddFavoriteResponse addFavoriteResponse = new AddFavoriteResponse();
+        addFavoriteResponse.setFullName(userFavorite.getFullName());
         addFavoriteResponse.setStatus("Success");
         addFavoriteResponse.setMessage("Favorite is added");
         return addFavoriteResponse;
