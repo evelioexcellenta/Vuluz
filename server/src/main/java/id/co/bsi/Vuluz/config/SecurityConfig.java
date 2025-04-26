@@ -62,6 +62,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         // Allow frontend origins
         configuration.setAllowedOrigins(Arrays.asList(
+                "http://kelompok4.serverku.org",
                 "http://localhost:*",
                 "https://your-vercel-app-domain.vercel.app"
         ));
