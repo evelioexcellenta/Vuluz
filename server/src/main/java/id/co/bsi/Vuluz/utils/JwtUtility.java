@@ -44,11 +44,11 @@ public class JwtUtility {
 
     private Claims extractAllClaims(String token) {
         return Jwts
-                .parserBuilder()
-                .setSigningKey(getSigningKey())
+                .parser()
+                .verifyWith(getSigningKey())
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
 
     }
 
