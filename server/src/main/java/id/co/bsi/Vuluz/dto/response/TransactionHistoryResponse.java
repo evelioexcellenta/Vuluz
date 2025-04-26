@@ -9,6 +9,7 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 public class TransactionHistoryResponse {
+    private Long id;
     private Date transactionDate;
     private String transactionType;
     private String description;

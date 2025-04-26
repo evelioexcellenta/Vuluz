@@ -98,6 +98,7 @@ public class DashboardService {
                     BigDecimal amount = isIncoming ? tx.getAmount() : tx.getAmount().negate();
 
                     return new TransactionHistoryResponse(
+                            tx.getId(),
                             tx.getTransactionDate(),
                             tx.getTransactionType(),
                             tx.getDescription(),
