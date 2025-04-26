@@ -29,6 +29,7 @@ const Register = () => {
       email: "",
       password: "",
       confirmPassword: "",
+      pin:"",
     },
   });
 
@@ -52,6 +53,7 @@ const Register = () => {
         gender: data.gender,
         email: data.email,
         password: data.password,
+        pin: data.pin,
       });
       console.log("Registration success, navigating...",success);
 
@@ -196,6 +198,23 @@ const Register = () => {
                 })}
                 error={errors.confirmPassword?.message}
                 autoComplete="new-password"
+                required
+              />
+
+              <Input
+                label="PIN"
+                type="password"
+                id="pin"
+                {...register("pin", {
+                  required: "PIN is required",
+                  minLength: {
+                    value: 6,
+                    message: "PIN must be at least 6 characters",
+                  },
+                })}
+                error={errors.pin?.message}
+                autoComplete="pin"
+                placeholder="123456"
                 required
               />
 

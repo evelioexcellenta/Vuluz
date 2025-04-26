@@ -14,12 +14,12 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
   const [selectedFavorite, setSelectedFavorite] = useState(null);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newAccountNumber, setNewAccountNumber] = useState("");
-  const [newAccountName, setNewAccountName] = useState("");
+  const [showFavoritesPopup, setShowFavoritesPopup] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [showFavoritesPopup, setShowFavoritesPopup] = useState(false);
+
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [formData, setFormData] = useState(null);
 
   useEffect(() => {
     fetchFavorites();
@@ -34,22 +34,36 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
     }
   };
 
-  const handleTransfer = async () => {
-    if (!selectedFavorite || !amount) return;
+  const handleTransfer = () => {
+    if (!selectedFavorite || !amount) {
+      setError("Please select a favorite and enter amount.");
+      return;
+    }
 
-    const result = await onSubmit({
-      toWalletNumber: selectedFavorite.walletNumber,
+    setFormData({
+      accountNumber: selectedFavorite.walletNumber,
+      recipient: selectedFavorite.ownerName,
       amount: parseFloat(amount),
-      notes: description,
+      description,
     });
+    setShowConfirmation(true);
+  };
 
-    if (result.success) {
-      setSuccess(true);
-      setAmount("");
-      setDescription("");
-      setSelectedFavorite(null);
-    } else {
-      setError(result.error || "Transfer failed.");
+  const handleConfirmTransfer = async () => {
+    try {
+      setShowConfirmation(false);
+      const result = await onSubmit(formData);
+
+      if (result.success) {
+        setSuccess(true);
+        setAmount("");
+        setDescription("");
+        setSelectedFavorite(null);
+      } else {
+        setError(result.error || "Transfer failed.");
+      }
+    } catch (err) {
+      setError(err.message || "Transfer failed.");
     }
   };
 
@@ -90,7 +104,7 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
           />
 
           {selectedFavorite && (
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded-md mt-2">
               <div className="text-sm text-gray-700 font-medium">
                 {selectedFavorite.ownerName}
               </div>
@@ -134,6 +148,67 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
         </Button>
       </Card.Body>
 
+      {/* Modal Konfirmasi */}
+      <Modal
+        isOpen={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        title="Confirm Transfer"
+        footer={
+          <div className="flex justify-end space-x-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmation(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleConfirmTransfer}
+              isLoading={isLoading}
+            >
+              Confirm Transfer
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">You are about to transfer:</p>
+
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex justify-between mb-2">
+              <span className="text-gray-500">Amount:</span>
+              <span className="font-bold text-gray-800">
+                {formatCurrency(formData?.amount)}
+              </span>
+            </div>
+
+            <div className="flex justify-between mb-2">
+              <span className="text-gray-500">To:</span>
+              <span className="font-medium text-gray-800">
+                {formData?.recipient}
+              </span>
+            </div>
+
+            <div className="flex justify-between mb-2">
+              <span className="text-gray-500">Account:</span>
+              <span className="font-medium text-gray-800">
+                {formData?.accountNumber}
+              </span>
+            </div>
+
+            {formData?.description && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Description:</span>
+                <span className="text-gray-800">{formData.description}</span>
+              </div>
+            )}
+          </div>
+
+          <p className="text-sm text-gray-500 italic">
+            Please verify the information above before confirming.
+          </p>
+        </div>
+      </Modal>
     </Card>
   );
 };

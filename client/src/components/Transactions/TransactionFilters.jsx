@@ -59,8 +59,6 @@ const TransactionFilters = ({
               <option value={APP_CONFIG.TRANSACTION_TYPES.TRANSFER_IN}>Transfer In</option>
               <option value={APP_CONFIG.TRANSACTION_TYPES.TRANSFER_OUT}>Transfer Out</option>
               <option value={APP_CONFIG.TRANSACTION_TYPES.TOP_UP}>Top Up</option>
-              <option value={APP_CONFIG.TRANSACTION_TYPES.PAYMENT}>Payment</option>
-              <option value={APP_CONFIG.TRANSACTION_TYPES.REFUND}>Refund</option>
             </select>
           </div>
           

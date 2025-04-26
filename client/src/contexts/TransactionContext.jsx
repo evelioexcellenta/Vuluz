@@ -21,28 +21,40 @@ export const TransactionProvider = ({ children }) => {
     dateFrom: "",
     dateTo: "",
     search: "",
+    sortKey: "", // Add sort key
+    sortDirection: "", // Add sort direction
   });
 
   // Load balance and recent transactions on mount
   useEffect(() => {
     const loadData = async () => {
+      setIsLoading(true);
+      setError(null);
       try {
-        // In a real app, fetch from API
-        // For demo, we'll use mock data
-        console.log("User balance:", user?.balance);
-        setBalance(user?.balance || 0);
-        setTransactions(mockAPI.transactions);
-        setFilteredTransactions(mockAPI.transactions);
-        setSummary(mockAPI.summary);
+        const response = await transactionAPI.getHistory();
+       
+        const mappedTransactions = response.map((tx) => ({
+          id: tx.id, 
+          date: new Date(tx.transactionDate),
+          type: tx.transactionType.toUpperCase().replace(' ', '_'),
+          amount: tx.amount,
+          description: tx.description,
+          account: tx.account,
+        }));
+  
+        setTransactions(mappedTransactions);
+        setFilteredTransactions(mappedTransactions);
       } catch (err) {
         setError(err.message || "Failed to load transaction data");
       } finally {
         setIsLoading(false);
       }
     };
-
+  
     loadData();
   }, []);
+
+  
 
   // Apply filters when filters state changes
   useEffect(() => {
@@ -90,33 +102,20 @@ export const TransactionProvider = ({ children }) => {
   const createTransfer = async (transferData) => {
     setIsLoading(true);
     setError(null);
-
+  
     try {
-      // In a real app, send to API
-      // For demo, simulate a server response
-      const newTransaction = await new Promise((resolve) => {
-        setTimeout(() => {
-          const tx = {
-            id: `tx_${Date.now()}`,
-            type: APP_CONFIG.TRANSACTION_TYPES.TRANSFER_OUT,
-            amount: Number(transferData.amount),
-            date: new Date(),
-            description:
-              transferData.description ||
-              `Transfer to ${transferData.recipient}`,
-            account: transferData.recipient,
-            accountId: transferData.accountId || `acc_${Date.now()}`,
-          };
-
-          resolve(tx);
-        }, 1000);
-      });
-
-      // Update state with new transaction
-      setTransactions((prev) => [newTransaction, ...prev]);
-      setBalance((prev) => prev - Number(transferData.amount));
-
-      return { success: true, transaction: newTransaction };
+      const payload = {
+        toWalletNumber: Number(transferData.accountNumber),
+        amount: parseFloat(transferData.amount),
+        notes: transferData.description || '',
+      };
+  
+      const response = await transactionAPI.transfer(payload);
+  
+      // Optional: refresh transactions/balance after successful transfer
+      // e.g., await loadData();
+  
+      return { success: response.status === "Success", data: response };
     } catch (err) {
       setError(err.message || "Transfer failed. Please try again.");
       return { success: false, error: err.message };
@@ -124,6 +123,7 @@ export const TransactionProvider = ({ children }) => {
       setIsLoading(false);
     }
   };
+  
 
   // Create a top-up transaction
   const createTopUp = async (topUpData) => {
@@ -146,9 +146,74 @@ export const TransactionProvider = ({ children }) => {
     }
   };
 
+   // Load balance and recent transactions on mount
+   useEffect(() => {
+    loadTransactions();
+  }, []);
+
+  // New function to load transactions with all params
+  const loadTransactions = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Create the sort parameter based on key and direction
+      const sortParam = filters.sortKey && filters.sortDirection 
+        ? `${filters.sortKey}_${filters.sortDirection}`
+        : "";
+      
+      const params = {
+        transactionType: filters.type,
+        fromDate: filters.dateFrom,
+        toDate: filters.dateTo,
+        search: filters.search,
+        sortOrder: sortParam
+      };
+      
+      // Filter out empty values
+      Object.keys(params).forEach(key => 
+        params[key] === "" && delete params[key]
+      );
+      
+      const response = await transactionAPI.getHistory(params);
+      
+      const mappedTransactions = response.map((tx) => ({
+        id: tx.id, 
+        date: new Date(tx.transactionDate),
+        type: tx.transactionType.toUpperCase().replace(' ', '_'),
+        amount: tx.amount,
+        description: tx.description,
+        account: tx.account,
+      }));
+      
+      setTransactions(mappedTransactions);
+      setFilteredTransactions(mappedTransactions);
+    } catch (err) {
+      setError(err.message || "Failed to load transaction data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Set transaction filters
+  // Apply filters should now trigger a reload from the API
   const applyFilters = (newFilters) => {
-    setFilters((prev) => ({ ...prev, ...newFilters }));
+    const updatedFilters = { ...filters, ...newFilters };
+    setFilters(updatedFilters);
+    
+    // Reload data with new filters
+    loadTransactions();
+  };
+
+  // Change sort function to call the backend
+  const applySort = (key, direction) => {
+    setFilters(prev => ({
+      ...prev,
+      sortKey: key,
+      sortDirection: direction
+    }));
+    
+    // Reload data with new sort
+    loadTransactions();
   };
 
   // Clear all filters
@@ -175,6 +240,7 @@ export const TransactionProvider = ({ children }) => {
     createTopUp,
     applyFilters,
     clearFilters,
+    applySort, 
   };
 
   return (

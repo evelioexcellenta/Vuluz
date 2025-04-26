@@ -64,8 +64,6 @@ const TopUpForm = ({
         setSuccess(true);
         reset();
       } else {
-        // if (result.error == "JWT")
-        console.log(result.error);
         if(result.error == "JWT token expired"){
           setError("Please Relogin")
         }else setError("Top-up failed. Please try again.");
@@ -75,12 +73,11 @@ const TopUpForm = ({
     }
   };
 
-  // Close success alert and clear state
+  // success alert 
   const handleDismissSuccess = () => {
     setSuccess(false);
   };
 
-  // Close error alert and clear state
   const handleDismissError = () => {
     setError("");
   };
