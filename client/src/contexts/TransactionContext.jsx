@@ -108,6 +108,7 @@ export const TransactionProvider = ({ children }) => {
         toWalletNumber: Number(transferData.accountNumber),
         amount: parseFloat(transferData.amount),
         notes: transferData.description || '',
+        pin: transferData.pin || '',
       };
   
       const response = await transactionAPI.transfer(payload);

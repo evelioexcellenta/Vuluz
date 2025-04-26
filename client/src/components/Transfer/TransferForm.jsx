@@ -6,6 +6,7 @@ import Input from "../UI/Input";
 import Button from "../UI/Button";
 import Modal from "../UI/Modal";
 import Alert from "../UI/Alert";
+import PinModal from "../UI/PinModal";
 import {
   isValidAccountNumber,
   isValidAmount,
@@ -13,6 +14,7 @@ import {
 } from "../../utils/validators";
 import { formatCurrency } from "../../utils/formatters";
 import { apiRequest } from "../../utils/api";
+import TransferSuccessModal from "../UI/TransferSuccessModal";
 
 const TransferForm = ({
   onSubmit,
@@ -23,11 +25,14 @@ const TransferForm = ({
 }) => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [formData, setFormData] = useState(null);
+  const [pendingData, setPendingData] = useState(null);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [recipientName, setRecipientName] = useState("");
+  const [successData, setSuccessData] = useState(null);
 
-  // Form validation with react-hook-form
   const {
     register,
     handleSubmit,
@@ -43,10 +48,8 @@ const TransferForm = ({
     },
   });
 
-  // Watch amount for confirmation display
   const amountValue = watch("amount");
 
-  // Handle form validation and open confirmation modal
   const handleFormSubmit = (data) => {
     setFormData({
       ...data,
@@ -55,29 +58,43 @@ const TransferForm = ({
     setShowConfirmation(true);
   };
 
-  // Handle actual form submission after confirmation
-  const handleConfirmTransfer = async () => {
+  const handleConfirmTransfer = () => {
+    setPendingData(formData); // Simpan data sementara
+    setShowConfirmation(false);
+    setShowPinModal(true); // Buka modal pin
+  };
+
+  const handlePinConfirm = async (pin) => {
     try {
-      setShowConfirmation(false);
-      const result = await onSubmit(formData);
+      setShowPinModal(false);
+
+      const finalData = { ...pendingData, pin };
+      const result = await onSubmit(finalData);
 
       if (result.success) {
-        setSuccess(true);
+        setSuccessData({
+          amount: finalData.amount,
+          recipient: finalData.recipient,
+          accountNumber: finalData.accountNumber,
+        });
+        setShowSuccessModal(true);
         reset();
       } else {
-        setError(result.error || "Transfer failed. Please try again.");
+        if (result.error === "JWT token expired") {
+          setError("Please Relogin");
+        } else {
+          setError("Transfer failed. Please try again.");
+        }
       }
     } catch (err) {
       setError(err.message || "An unexpected error occurred.");
     }
   };
 
-  // Close success alert and clear state
   const handleDismissSuccess = () => {
     setSuccess(false);
   };
 
-  // Close error alert and clear state
   const handleDismissError = () => {
     setError("");
   };
@@ -92,7 +109,6 @@ const TransferForm = ({
       const res = await apiRequest(
         `/api/wallet/owner/${Number(accountNumber)}`
       );
-      // Coba semua kemungkinan struktur
       if (res.fullName) {
         setRecipientName(res.fullName);
       } else if (res.data && res.data.fullName) {
@@ -100,7 +116,6 @@ const TransferForm = ({
       } else {
         setRecipientName("User not found");
       }
-
       setError("");
     } catch (err) {
       setRecipientName("");
@@ -308,6 +323,25 @@ const TransferForm = ({
           </p>
         </div>
       </Modal>
+
+      {/* Pin Modal */}
+      <PinModal
+        isOpen={showPinModal}
+        onClose={() => setShowPinModal(false)}
+        onConfirm={handlePinConfirm}
+        isLoading={isLoading}
+      />
+
+      {/* Success Modal */}
+      {successData && (
+        <TransferSuccessModal
+          isOpen={showSuccessModal}
+          onClose={() => setShowSuccessModal(false)}
+          amount={formatCurrency(successData.amount)}
+          recipientName={successData.recipient}
+          accountNumber={successData.accountNumber}
+        />
+      )}
     </Card>
   );
 };

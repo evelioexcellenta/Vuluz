@@ -8,6 +8,8 @@ import Alert from "../UI/Alert";
 import { apiRequest } from "../../utils/api";
 import { formatCurrency } from "../../utils/formatters";
 import FavoriteManager from "./FavoriteManager";
+import PinModal from "../UI/PinModal";
+import TransferSuccessModal from "../UI/TransferSuccessModal"; // Modal baru khusus transfer sukses!
 
 const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
   const [favorites, setFavorites] = useState([]);
@@ -15,11 +17,15 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [showFavoritesPopup, setShowFavoritesPopup] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
   const [formData, setFormData] = useState(null);
+  const [pendingData, setPendingData] = useState(null);
+  const [successData, setSuccessData] = useState(null);
 
   useEffect(() => {
     fetchFavorites();
@@ -49,13 +55,26 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
     setShowConfirmation(true);
   };
 
-  const handleConfirmTransfer = async () => {
+  const handleConfirmTransfer = () => {
+    setPendingData(formData);  // simpan data
+    setShowConfirmation(false);
+    setShowPinModal(true);
+  };
+
+  const handlePinConfirm = async (pin) => {
     try {
-      setShowConfirmation(false);
-      const result = await onSubmit(formData);
+      setShowPinModal(false);
+
+      const finalData = { ...pendingData, pin };
+      const result = await onSubmit(finalData);
 
       if (result.success) {
-        setSuccess(true);
+        setSuccessData({
+          amount: finalData.amount,
+          recipient: finalData.recipient,
+          accountNumber: finalData.accountNumber,
+        });
+        setShowSuccessModal(true);
         setAmount("");
         setDescription("");
         setSelectedFavorite(null);
@@ -71,14 +90,6 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
     <Card>
       <Card.Header title="Transfer via Favorite" />
       <Card.Body className="space-y-4">
-        {success && (
-          <Alert
-            type="success"
-            title="Success"
-            message="Transfer complete."
-            onClose={() => setSuccess(false)}
-          />
-        )}
         {error && (
           <Alert
             type="error"
@@ -148,7 +159,7 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
         </Button>
       </Card.Body>
 
-      {/* Modal Konfirmasi */}
+      {/* Confirmation Modal */}
       <Modal
         isOpen={showConfirmation}
         onClose={() => setShowConfirmation(false)}
@@ -209,6 +220,25 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
           </p>
         </div>
       </Modal>
+
+      {/* PIN Modal */}
+      <PinModal
+        isOpen={showPinModal}
+        onClose={() => setShowPinModal(false)}
+        onConfirm={handlePinConfirm}
+        isLoading={isLoading}
+      />
+
+      {/* Transfer Success Modal */}
+      {successData && (
+        <TransferSuccessModal
+          isOpen={showSuccessModal}
+          onClose={() => setShowSuccessModal(false)}
+          amount={formatCurrency(successData.amount)}
+          recipientName={successData.recipient}
+          accountNumber={successData.accountNumber}
+        />
+      )}
     </Card>
   );
 };
