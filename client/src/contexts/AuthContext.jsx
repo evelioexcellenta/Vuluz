@@ -73,6 +73,7 @@ export const AuthProvider = ({ children }) => {
         gender: userData.gender,
         email: userData.email,
         password: userData.password,
+        pin: userData.pin,
       });
 
       if (data.status === "success" || data.status === "OK") {

@@ -9,6 +9,8 @@ import Alert from "../UI/Alert";
 import { isValidAmount, isAmountInRange } from "../../utils/validators";
 import { formatCurrency } from "../../utils/formatters";
 import { APP_CONFIG } from "../../constants/config";
+import PinModal from "../UI/PinModal";
+import SuccessModal from "../UI/SuccessModal";
 
 const TopUpForm = ({
   onSubmit,
@@ -21,6 +23,9 @@ const TopUpForm = ({
   const [formData, setFormData] = useState(null);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pendingData, setPendingData] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Form validation with react-hook-form
   const {
@@ -54,26 +59,51 @@ const TopUpForm = ({
   };
 
   // Handle actual form submission after confirmation
-  const handleConfirmTopUp = async () => {
-    try {
-      setShowConfirmation(false);
+  // const handleConfirmTopUp = async () => {
+  //   try {
+  //     setShowPinModal(false);
 
-      const result = await onSubmit(formData);
+  //     const result = await onSubmit({ ...formData, pin: pinInput });
+
+  //     if (result.success) {
+  //       setShowSuccessModal(true); // 🎯 Show success modal
+  //       reset();
+  //     } else {
+  //       if (result.error === "JWT token expired") {
+  //         setError("Please Relogin");
+  //       } else {
+  //         setError("Top-up failed. Please try again.");
+  //       }
+  //     }
+  //   } catch (err) {
+  //     setError(err.message || "An unexpected error occurred.");
+  //   }
+  // };
+
+  // ketika user masukkan PIN dan confirm
+  const handlePinConfirm = async (pin) => {
+    try {
+      setShowPinModal(false);
+
+      const finalData = { ...pendingData, pin };
+      const result = await onSubmit(finalData);
 
       if (result.success) {
-        setSuccess(true);
+        setShowSuccessModal(true);
         reset();
       } else {
-        if(result.error == "JWT token expired"){
-          setError("Please Relogin")
-        }else setError("Top-up failed. Please try again.");
+        if (result.error === "JWT token expired") {
+          setError("Please Relogin");
+        } else {
+          setError("Top-up failed. Please try again.");
+        }
       }
     } catch (err) {
-      setError(err.message|| "An unexpected error occurred.");
+      setError(err.message || "An unexpected error occurred.");
     }
   };
 
-  // success alert 
+  // success alert
   const handleDismissSuccess = () => {
     setSuccess(false);
   };
@@ -222,7 +252,11 @@ const TopUpForm = ({
             </Button>
             <Button
               variant="primary"
-              onClick={handleConfirmTopUp}
+              onClick={() => {
+                setShowConfirmation(false); // tutup modal konfirmasi
+                setPendingData(formData); // simpan data form
+                setShowPinModal(true); // buka PIN modal
+              }}
               isLoading={isLoading}
             >
               Confirm Top-Up
@@ -262,6 +296,18 @@ const TopUpForm = ({
           </p>
         </div>
       </Modal>
+      <PinModal
+        isOpen={showPinModal}
+        onClose={() => setShowPinModal(false)}
+        onConfirm={handlePinConfirm}
+        isLoading={isLoading}
+      />
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        amount={formatCurrency(amountValue)}
+        paymentMethod={getMethodName(methodValue)}
+      />
     </Card>
   );
 };

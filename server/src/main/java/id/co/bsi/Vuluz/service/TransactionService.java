@@ -170,24 +170,6 @@ public class TransactionService {
         return response;
     }
 
-//    public Wallet createWallet(CreateWalletRequest createWalletRequest){
-//        Wallet wallet = new Wallet();
-//        wallet.setWalletName(createWalletRequest.getWalletName());
-//        wallet.setBalance(BigDecimal.valueOf(0));
-//        wallet.setCreatedAt(new Date());
-//        wallet.setUpdatedAt(new Date());
-//
-//        long randomWalletNumber = ThreadLocalRandom.current().nextLong(100000, 1000000); // 6 digit
-//        wallet.setWalletNumber(randomWalletNumber);
-//
-//        User user = userRepository.findById(securityUtility.getCurrentUserId()).get();
-//        wallet.setUser(user);
-//
-//        walletRepository.save(wallet);
-//
-//        return wallet;
-//    }
-
     public AddFavoriteResponse addFavoriteResponse(AddFavoriteRequest addFavoriteRequest){
         User user = userRepository.findById(securityUtility.getCurrentUserId())
                 .orElseThrow(() -> new RuntimeException("User is not found"));
