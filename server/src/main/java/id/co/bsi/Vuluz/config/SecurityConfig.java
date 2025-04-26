@@ -63,7 +63,7 @@ public class SecurityConfig {
         // Allow frontend origins
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://kelompok4.serverku.org",
-                "http://localhost:*",
+                "http://localhost:5173",
                 "https://your-vercel-app-domain.vercel.app"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
