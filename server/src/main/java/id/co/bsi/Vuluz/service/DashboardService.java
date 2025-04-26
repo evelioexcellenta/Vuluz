@@ -167,21 +167,52 @@ public class DashboardService {
         BigDecimal totalIncome = BigDecimal.ZERO;
         BigDecimal totalExpense = BigDecimal.ZERO;
 
+        // Ambil saldo sekarang
+        BigDecimal currentBalance = wallet.getBalance() != null ? wallet.getBalance() : BigDecimal.ZERO;
+
+        // Hitung transaksi bulan lalu
+        LocalDate now = LocalDate.now();
+        LocalDate previousMonthStart = now.minusMonths(1).withDayOfMonth(1);
+        LocalDate previousMonthEnd = previousMonthStart.withDayOfMonth(previousMonthStart.lengthOfMonth());
+
+        BigDecimal balanceChange = BigDecimal.ZERO;
+
         for (Transaction tx : transactions) {
             String type = tx.getTransactionType();
-            if ("Top Up".equalsIgnoreCase(type)) {
+            boolean isIncoming = "Top Up".equalsIgnoreCase(type) ||
+                    ("Transfer In".equalsIgnoreCase(type) && walletNumber.equals(tx.getToWalletNumber()));
+            boolean isOutgoing = "Transfer Out".equalsIgnoreCase(type) && walletNumber.equals(tx.getFromWalletNumber());
+
+            if (isIncoming) {
                 totalIncome = totalIncome.add(tx.getAmount());
-            } else if ("Transfer In".equalsIgnoreCase(type) && walletNumber.equals(tx.getToWalletNumber())) {
-                totalIncome = totalIncome.add(tx.getAmount());
-            } else if ("Transfer Out".equalsIgnoreCase(type) && walletNumber.equals(tx.getFromWalletNumber())) {
+            } else if (isOutgoing) {
                 totalExpense = totalExpense.add(tx.getAmount());
+            }
+
+            // Hitung perubahan balance bulan lalu
+            LocalDate txDate = toLocalDate(tx.getTransactionDate());
+            if ((txDate.isEqual(previousMonthStart) || txDate.isAfter(previousMonthStart)) &&
+                    (txDate.isEqual(previousMonthEnd) || txDate.isBefore(previousMonthEnd))) {
+
+                if (isIncoming) {
+                    balanceChange = balanceChange.add(tx.getAmount());
+                } else if (isOutgoing) {
+                    balanceChange = balanceChange.subtract(tx.getAmount());
+                }
             }
         }
 
+        BigDecimal previousMonthBalance = currentBalance.subtract(balanceChange);
         BigDecimal netIncome = totalIncome.subtract(totalExpense);
 
-        return new TransactionSummaryResponse(totalIncome, totalExpense, netIncome);
+        return new TransactionSummaryResponse(
+                totalIncome,
+                totalExpense,
+                netIncome,
+                currentBalance,
+                previousMonthBalance,
+                balanceChange
+        );
     }
-
 
 }
