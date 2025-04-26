@@ -56,24 +56,27 @@ export const authAPI = {
 
   logout: () => apiRequest("/auth/logout", { method: "POST" }),
 
-  getProfile: () => 
-  apiRequest('/api/profile')
+  getProfile: () => apiRequest("/api/profile"),
 };
 
 // Transaction API calls
 export const transactionAPI = {
-  getBalance: () => apiRequest("/transactions/balance"),
+  getBalance: () => apiRequest("/api/balance"),
 
   getHistory: (params = {}) => {
     // Convert params to URL search params
     const searchParams = new URLSearchParams();
-    
-    Object.keys(params).forEach(key => {
-      if (params[key] !== null && params[key] !== undefined && params[key] !== "") {
+
+    Object.keys(params).forEach((key) => {
+      if (
+        params[key] !== null &&
+        params[key] !== undefined &&
+        params[key] !== ""
+      ) {
         searchParams.append(key, params[key]);
       }
     });
-    
+
     return apiRequest(`/api/history?${searchParams.toString()}`);
   },
 
@@ -90,8 +93,9 @@ export const transactionAPI = {
       method: "POST",
       body: JSON.stringify(topUpData),
     }),
-};
 
+  getSummary: () => apiRequest("/api/summary"),
+};
 
 export const mockAPI = {
   // Mock user data

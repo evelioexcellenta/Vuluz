@@ -31,10 +31,13 @@ export const TransactionProvider = ({ children }) => {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await transactionAPI.getHistory();
-       
-        const mappedTransactions = response.map((tx) => ({
-          id: tx.id, 
+        const [history, summaryData] = await Promise.all([
+          transactionAPI.getHistory(),
+          transactionAPI.getSummary(),
+        ]);
+  
+        const mappedTransactions = history.map((tx) => ({
+          id: tx.id,
           date: new Date(tx.transactionDate),
           type: tx.transactionType.toUpperCase().replace(' ', '_'),
           amount: tx.amount,
@@ -44,6 +47,14 @@ export const TransactionProvider = ({ children }) => {
   
         setTransactions(mappedTransactions);
         setFilteredTransactions(mappedTransactions);
+  
+        // ✅ Update summary di sini
+        setSummary({
+          monthlyTopUps: summaryData.totalIncome || 0,
+          monthlyTransfersOut: summaryData.totalExpense || 0,
+          monthlyExpenses: summaryData.netIncome || 0,
+        });
+  
       } catch (err) {
         setError(err.message || "Failed to load transaction data");
       } finally {
@@ -53,6 +64,7 @@ export const TransactionProvider = ({ children }) => {
   
     loadData();
   }, []);
+  
 
   
 
