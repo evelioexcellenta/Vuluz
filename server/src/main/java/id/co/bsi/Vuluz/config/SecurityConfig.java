@@ -5,10 +5,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -29,7 +29,6 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -40,21 +39,22 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/").permitAll() // Allow OPTIONS preflight
-                        .requestMatchers("/v1/auth/register", "/v1/auth/login").permitAll()
+                        .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                         .anyRequest().authenticated()
                 )
+//                .cors(Customizer.withDefaults())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(
-                        (request, response, authException) -> {
-                            response.setContentType("application/json");
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.getWriter().write("{\"success\":false,\"message\":\"Authentication required\"}");
-                        }
-                ))
+                                (request, response, authException) -> {
+                                    response.setContentType("application/json");
+                                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                    response.getWriter().write("{\"success\":false,\"message\":\"Authentication required\"}");
+                                }
+                        )
+                )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
@@ -62,27 +62,20 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
-        // Allow specific frontend URLs
+        // Allow frontend origins
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:5173",
-                "http://kelompok4.serverku.org"
+                "http://kelompok4.serverku.org",
+                "https://kelompok6.serverku.org",
+                "https://your-vercel-app-domain.vercel.app"
         ));
-
-        // Allow any headers (better for dev)
-        configuration.addAllowedHeader("*");
-
-        // Allow common methods
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-
-        // Allow Authorization header to be exposed
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
         configuration.setExposedHeaders(List.of("Authorization"));
-
-        configuration.setAllowCredentials(true); // Important if you use cookies or Authorization header
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/", configuration);
-
         return source;
     }
 
