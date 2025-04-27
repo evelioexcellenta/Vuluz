@@ -27,14 +27,18 @@ export function useAuth() {
     if (!loginEmail || !loginPassword) {
       return false;
     }
+  
+    const success = await login(loginEmail, loginPassword);
 
-    await login(loginEmail, loginPassword);
-    if (isAuthenticated) {
-      router.replace('/(tabs)');
+    if (success !== undefined && success !== null) {
+      router.replace('/(tabs)'); // baru redirect kalau beneran sukses
       return true;
     }
+    
     return false;
   };
+  
+  
 
   const handleRegister = async () => {
     if (!registerName || !registerEmail || !registerPassword || !registerGender || !registerUsername || !registerPin) {

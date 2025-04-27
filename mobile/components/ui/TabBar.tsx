@@ -15,7 +15,7 @@ export function TabBar({ state }: TabBarProps) {
   const pathname = usePathname();
   
   const tabs = [
-    { name: 'index', label: 'Dashboard', icon: Home },
+    { name: 'home', label: 'Dashboard', icon: Home },
     { name: 'top-up', label: 'Top Up', icon: Plus },
     { name: 'transfer', label: 'Transfer', icon: ArrowRightLeft },
     { name: 'transactions', label: 'Transactions', icon: BarChart3 },
