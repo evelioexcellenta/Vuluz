@@ -56,7 +56,7 @@ const Dashboard = () => {
 
           {/* Right: Chart (2/3) */}
           <div className="col-span-1 lg:col-span-2">
-            <CashFlowChart period="weekly" />
+            <CashFlowChart />
           </div>
         </div>
 

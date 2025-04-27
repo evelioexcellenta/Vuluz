@@ -6,12 +6,13 @@ import { APP_CONFIG } from '../constants/config';
  * @param {string} currency - Currency code (defaults to APP_CONFIG.CURRENCY)
  * @returns {string} Formatted currency string
  */
-export const formatCurrency = (amount = 0, currency = APP_CONFIG.CURRENCY) => {
-  const numericAmount = Number(amount);
+export const formatCurrency = (value) => {
+  if (typeof value !== "number") return "Rp 0"; // << cegah error di recharts
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
-    currency
-  }).format(isNaN(numericAmount) ? 0 : numericAmount);
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+  }).format(value);
 };
 
 

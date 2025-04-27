@@ -1,172 +1,297 @@
-import { useEffect, useRef } from 'react';
-import PropTypes from 'prop-types';
-import { Chart, registerables } from 'chart.js';
-import Card from '../UI/Card';
-import useTransactions from '../../hooks/useTransactions';
+import { useState, useEffect } from "react";
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
+import Card from "../UI/Card";
+import Button from "../UI/Button";
+import { apiRequest } from "../../utils/api";
+import { formatCurrency } from "../../utils/formatters";
 
-// Register Chart.js components
-Chart.register(...registerables);
+const periods = ["daily", "weekly", "monthly", "quarterly"];
+const chartTypes = ["bar", "area"];
 
-const CashFlowChart = ({ period = 'weekly', className = '' }) => {
-  const chartRef = useRef(null);
-  const chartInstance = useRef(null);
-  const { summary, isLoading } = useTransactions();
-  
-  // Set up chart data based on period
-  useEffect(() => {
-    if (isLoading || !summary) return;
-    
-    // Clean up any existing chart
-    if (chartInstance.current) {
-      chartInstance.current.destroy();
-      chartInstance.current = null;
-    }
-    
-    const canvas = chartRef.current;
-    if (!canvas) return;
-    
-    // Determine data and labels based on period
-    let data, labels;
-    
-    switch (period) {
-      case 'weekly':
-        data = summary.weeklyData || [];
-        labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        break;
-      case 'monthly':
-        data = summary.monthlyData || [];
-        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        break;
-      default:
-        data = summary.weeklyData || [];
-        labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    }
-    
-    // Create gradient for area under the line
-    const ctx = canvas.getContext('2d');
-    const gradient = ctx.createLinearGradient(0, 0, 0, 250);
-    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
-    gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
-    
-    // Create chart
-    chartInstance.current = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [
-          {
-            label: 'Balance',
-            data,
-            borderColor: '#3B82F6',
-            backgroundColor: gradient,
-            tension: 0.3,
-            fill: true,
-            pointBackgroundColor: '#3B82F6',
-            pointBorderColor: '#fff',
-            pointBorderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          },
-          tooltip: {
-            mode: 'index',
-            intersect: false,
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            titleColor: '#1F2937',
-            bodyColor: '#4B5563',
-            borderColor: '#E5E7EB',
-            borderWidth: 1,
-            padding: 12,
-            boxPadding: 6,
-            usePointStyle: true,
-            callbacks: {
-              labelPointStyle: () => ({
-                pointStyle: 'circle',
-                rotation: 0
-              }),
-              label: (context) => {
-                return `$${context.parsed.y.toFixed(2)}`;
-              }
-            }
-          }
-        },
-        scales: {
-          x: {
-            grid: {
-              display: false
-            },
-            ticks: {
-              color: '#9CA3AF'
-            }
-          },
-          y: {
-            grid: {
-              color: '#F3F4F6'
-            },
-            ticks: {
-              color: '#9CA3AF',
-              callback: (value) => {
-                return `$${value}`;
-              }
-            },
-            beginAtZero: false
-          }
+const CashFlowChart = () => {
+  const [period, setPeriod] = useState("weekly");
+  const [chartType, setChartType] = useState("bar");
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchCashflow = async (selectedPeriod) => {
+    try {
+      setLoading(true);
+      const res = await apiRequest(`/api/cashflow?period=${selectedPeriod}`);
+
+      const monthOrder = [
+        "JAN",
+        "FEB",
+        "MAR",
+        "APR",
+        "MAY",
+        "JUN",
+        "JUL",
+        "AUG",
+        "SEP",
+        "OCT",
+        "NOV",
+        "DEC",
+      ];
+
+      const sortedData = [...res.data].sort((a, b) => {
+        if (selectedPeriod === "daily") {
+          return new Date(a.label) - new Date(b.label);
+        } else if (selectedPeriod === "weekly") {
+          return (
+            Number(a.label.replace("Week ", "")) -
+            Number(b.label.replace("Week ", ""))
+          );
+        } else if (selectedPeriod === "monthly") {
+          return (
+            monthOrder.indexOf(a.label.toUpperCase()) -
+            monthOrder.indexOf(b.label.toUpperCase())
+          );
+        } else if (selectedPeriod === "quarterly") {
+          return (
+            Number(a.label.replace("Q", "")) - Number(b.label.replace("Q", ""))
+          );
         }
-      }
-    });
-    
-    // Clean up on unmount
-    return () => {
-      if (chartInstance.current) {
-        chartInstance.current.destroy();
-        chartInstance.current = null;
-      }
-    };
-  }, [period, summary, isLoading]);
-  
-  // Determine title based on period
-  const getChartTitle = () => {
-    switch (period) {
-      case 'weekly': return 'Weekly Cash Flow';
-      case 'monthly': return 'Monthly Cash Flow';
-      case 'quarterly': return 'Quarterly Cash Flow';
-      default: return 'Cash Flow';
+      });
+
+      setData(sortedData);
+    } catch (error) {
+      console.error("Failed to fetch cashflow:", error);
+    } finally {
+      setLoading(false);
     }
   };
-  
+
+  useEffect(() => {
+    fetchCashflow(period);
+  }, [period]);
+
+  const handlePeriodChange = (newPeriod) => setPeriod(newPeriod);
+  const handleChartTypeChange = (newType) => setChartType(newType);
+
+  const isDark = document.documentElement.classList.contains("dark");
+
+  const chartColors = {
+    income: "#34d399",
+    expense: "#f87171",
+    net: "#60a5fa",
+    background: isDark ? "#1f2937" : "#ffffff",
+    grid: isDark ? "#374151" : "#e5e7eb",
+    text: isDark ? "#d1d5db" : "#4b5563",
+  };
+
   return (
-    <Card className={`animate-fade-in ${className}`}>
-      <Card.Header title={getChartTitle()} />
+    <Card>
+      <Card.Header
+        title="Cash Flow Chart"
+        subtitle="Income, Expenses, and Net Savings"
+      />
       <Card.Body>
-        {isLoading ? (
-          <div className="h-64 w-full flex items-center justify-center">
-            <svg className="animate-spin h-8 w-8 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
+        {/* Tombol Pilihan */}
+        <div className="flex justify-between mb-4">
+          {/* Period Button */}
+          <div className="space-x-2">
+            {periods.map((p) => (
+              <Button
+                key={p}
+                size="sm"
+                variant={period === p ? "primary" : "outline"}
+                onClick={() => handlePeriodChange(p)}
+              >
+                {p.charAt(0).toUpperCase() + p.slice(1)}
+              </Button>
+            ))}
+          </div>
+
+          {/* Chart Type Button */}
+          <div className="space-x-2">
+            {chartTypes.map((t) => (
+              <Button
+                key={t}
+                size="sm"
+                variant={chartType === t ? "primary" : "outline"}
+                onClick={() => handleChartTypeChange(t)}
+              >
+                {t.charAt(0).toUpperCase() + t.slice(1)}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Chart */}
+        {loading ? (
+          <div className="h-64 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary-500"></div>
           </div>
         ) : (
-          <div className="h-64">
-            <canvas ref={chartRef}></canvas>
-          </div>
+          <ResponsiveContainer width="100%" height={350}>
+            {chartType === "bar" ? (
+              <BarChart
+                data={data}
+                margin={{ top: 20, right: 30, left: 50, bottom: 0 }}
+              >
+                <CartesianGrid
+                  stroke={chartColors.grid}
+                  strokeDasharray="3 3"
+                />
+                <XAxis
+                  dataKey="label"
+                  stroke={chartColors.text}
+                  tickFormatter={(tick) =>
+                    tick.charAt(0) + tick.slice(1).toLowerCase()
+                  }
+                />
+
+                <YAxis
+                  stroke={chartColors.text}
+                  tickFormatter={formatCurrency}
+                />
+                <Tooltip
+                  formatter={formatCurrency}
+                  contentStyle={{
+                    background: chartColors.background,
+                    borderRadius: 8,
+                  }}
+                />
+                <Legend />
+                <Bar
+                  dataKey="income"
+                  fill={chartColors.income}
+                  barSize={20}
+                  radius={[6, 6, 0, 0]}
+                />
+                <Bar
+                  dataKey="expense"
+                  fill={chartColors.expense}
+                  barSize={20}
+                  radius={[6, 6, 0, 0]}
+                />
+                <Bar
+                  dataKey="net"
+                  fill={chartColors.net}
+                  barSize={20}
+                  radius={[6, 6, 0, 0]}
+                />
+              </BarChart>
+            ) : (
+              <AreaChart
+                data={data}
+                margin={{ top: 20, right: 30, left: 60, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient
+                    id="incomeGradient"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="5%"
+                      stopColor={chartColors.income}
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor={chartColors.income}
+                      stopOpacity={0}
+                    />
+                  </linearGradient>
+                  <linearGradient
+                    id="expenseGradient"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="5%"
+                      stopColor={chartColors.expense}
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor={chartColors.expense}
+                      stopOpacity={0}
+                    />
+                  </linearGradient>
+                  <linearGradient id="netGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor={chartColors.net}
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor={chartColors.net}
+                      stopOpacity={0}
+                    />
+                  </linearGradient>
+                </defs>
+
+                <CartesianGrid
+                  stroke={chartColors.grid}
+                  strokeDasharray="3 3"
+                />
+                <XAxis
+                  dataKey="label"
+                  stroke={chartColors.text}
+                  tickFormatter={(tick) =>
+                    tick.charAt(0) + tick.slice(1).toLowerCase()
+                  }
+                />
+
+                <YAxis
+                  stroke={chartColors.text}
+                  tickFormatter={formatCurrency}
+                />
+                <Tooltip
+                  formatter={formatCurrency}
+                  contentStyle={{
+                    background: chartColors.background,
+                    borderRadius: 8,
+                  }}
+                />
+                <Legend />
+                <Area
+                  type="monotone"
+                  dataKey="income"
+                  stroke={chartColors.income}
+                  fill="url(#incomeGradient)"
+                  strokeWidth={3}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="expense"
+                  stroke={chartColors.expense}
+                  fill="url(#expenseGradient)"
+                  strokeWidth={3}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="net"
+                  stroke={chartColors.net}
+                  fill="url(#netGradient)"
+                  strokeWidth={3}
+                />
+              </AreaChart>
+            )}
+          </ResponsiveContainer>
         )}
-        Chart here
       </Card.Body>
     </Card>
   );
-};
-
-CashFlowChart.propTypes = {
-  period: PropTypes.oneOf(['weekly', 'monthly', 'quarterly']),
-  className: PropTypes.string
 };
 
 export default CashFlowChart;
