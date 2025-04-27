@@ -99,34 +99,29 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   fetchRecipients: async () => {
     set({ isLoading: true, error: null });
     try {
-      // Simulating API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Mock recipients data
-      const recipients: Recipient[] = [
-        {
-          id: '1',
-          name: 'Hendrawan Aulia',
-          accountNumber: '114567823',
-          isFavorite: true,
+      const token = useAuthStore.getState().getAccessToken();
+      const response = await axios.get('http://localhost:8080/api/getfavorites', {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-        {
-          id: '2',
-          name: 'Salma Mazaya',
-          accountNumber: '114516277',
+      });
+  
+      if (response.data.status === 'Success') {
+        const favorites = response.data.data;
+  
+        const recipients: Recipient[] = favorites.map((fav: any) => ({
+          id: fav.id.toString(),
+          name: fav.ownerName,
+          accountNumber: fav.walletNumber.toString(),
           isFavorite: true,
-        },
-        {
-          id: '3',
-          name: 'Faadiyah R',
-          accountNumber: '114523547',
-          isFavorite: true,
-        },
-      ];
-
-      set({ recipients, isLoading: false });
-    } catch (error) {
-      set({ error: 'Failed to fetch recipients', isLoading: false });
+        }));
+  
+        set({ recipients, isLoading: false });
+      } else {
+        set({ error: response.data.message, isLoading: false });
+      }
+    } catch (error: any) {
+      set({ error: error.response?.data?.message || 'Failed to fetch favorites', isLoading: false });
     }
   },
 
@@ -273,26 +268,36 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   addFavorite: async (name, accountNumber) => {
     set({ isLoading: true, error: null });
     try {
-      // Simulating API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Create new favorite recipient
-      const newRecipient: Recipient = {
-        id: Date.now().toString(),
-        name,
-        accountNumber,
-        isFavorite: true,
-      };
-
-      set((state) => ({
-        recipients: [...state.recipients, newRecipient],
-        isLoading: false,
-      }));
-
-      return true;
-    } catch (error) {
+      const token = useAuthStore.getState().getAccessToken();
+      const response = await axios.post('http://localhost:8080/api/favorite', {
+        walletNumber: Number(accountNumber),
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      if (response.data.status === 'Success') {
+        const newRecipient: Recipient = {
+          id: Date.now().toString(), // Temp id
+          name,
+          accountNumber,
+          isFavorite: true,
+        };
+  
+        set((state) => ({
+          recipients: [...state.recipients, newRecipient],
+          isLoading: false,
+        }));
+  
+        return true;
+      } else {
+        set({ error: response.data.message, isLoading: false });
+        return false;
+      }
+    } catch (error: any) {
       set({
-        error: 'Failed to add favorite. Please try again.',
+        error: error.response?.data?.message || 'Failed to add favorite',
         isLoading: false,
       });
       return false;
@@ -302,18 +307,27 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   removeFavorite: async (id) => {
     set({ isLoading: true, error: null });
     try {
-      // Simulating API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
+      const token = useAuthStore.getState().getAccessToken();
+      
+      const favorite = get().recipients.find((fav) => fav.id === id);
+      if (!favorite) throw new Error('Favorite not found');
+  
+      await axios.delete(`http://localhost:8080/api/favorite/delete`, {
+        params: { walletNumber: favorite.accountNumber },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
       set((state) => ({
         recipients: state.recipients.filter((recipient) => recipient.id !== id),
         isLoading: false,
       }));
-
+  
       return true;
-    } catch (error) {
+    } catch (error: any) {
       set({
-        error: 'Failed to remove favorite. Please try again.',
+        error: error.response?.data?.message || 'Failed to remove favorite',
         isLoading: false,
       });
       return false;

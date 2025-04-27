@@ -49,9 +49,8 @@ export default function TransferScreen() {
   const [pin, setPin] = useState('');
   const [pinModalVisible, setPinModalVisible] = useState(false);
   const [successAmount, setSuccessAmount] = useState('');
-const [successRecipient, setSuccessRecipient] = useState('');
-const [successAccount, setSuccessAccount] = useState('');
-
+  const [successRecipient, setSuccessRecipient] = useState('');
+  const [successAccount, setSuccessAccount] = useState('');
 
   useEffect(() => {
     fetchRecipients();
@@ -73,12 +72,13 @@ const [successAccount, setSuccessAccount] = useState('');
 
   const handleSubmitPin = async () => {
     const account = selectedRecipient || recipientAccount;
-    const recipient = activeTab === 'favorites' ? getSelectedRecipientName() : recipientName;
-  
+    const recipient =
+      activeTab === 'favorites' ? getSelectedRecipientName() : recipientName;
+
     const success = await handleTransfer(pin);
-  
+
     setPinModalVisible(false);
-  
+
     if (success) {
       setSuccessAmount(amount);
       setSuccessRecipient(recipient || '');
@@ -86,17 +86,21 @@ const [successAccount, setSuccessAccount] = useState('');
       setSuccessModalVisible(true);
     }
   };
-  
 
   const handleDone = () => {
     setSuccessModalVisible(false);
   };
 
   const handleSaveFavorite = async () => {
-    if (recipientAccount && recipientName) {
+    if (
+      recipientAccount &&
+      recipientName &&
+      recipientName !== 'User not found'
+    ) {
       const success = await handleAddFavorite();
       if (success) {
         setAddFavoriteModalVisible(false);
+        fetchRecipients(); // Refresh list favorit
       }
     }
   };
@@ -160,21 +164,23 @@ const [successAccount, setSuccessAccount] = useState('');
               <Text style={styles.sectionTitle}>Transfer to Favorites</Text>
               <View style={styles.recipientSelection}>
                 <Text style={styles.label}>{getReceipientAccountLabel()}</Text>
-                {selectedRecipient ? (
-                  <Card style={styles.selectedRecipient}>
-                    <Text style={styles.selectedRecipientName}>
-                      {getSelectedRecipientName()}
-                    </Text>
-                    <Text style={styles.selectedRecipientAccount}>
-                      {selectedRecipient}
-                    </Text>
-                  </Card>
-                ) : (
-                  <Button
-                    title="Show Favorites"
-                    onPress={() => setFavoritesModalVisible(true)}
-                    variant="outline"
-                  />
+                <Button
+                  title="Show Favorites"
+                  onPress={() => setFavoritesModalVisible(true)}
+                  variant="outline"
+                  style={{ marginBottom: 12 }}
+                />
+
+                {selectedRecipient && (
+                  <Card style={styles.selectedRecipientCard}>
+  <Text style={styles.selectedRecipientName}>
+    {getSelectedRecipientName()}
+  </Text>
+  <Text style={styles.selectedRecipientAccount}>
+    {selectedRecipient}
+  </Text>
+</Card>
+
                 )}
               </View>
             </View>
@@ -260,9 +266,7 @@ const [successAccount, setSuccessAccount] = useState('');
             <View style={styles.inlineAction}>
               <Button
                 title="Check"
-                onPress={() => {
-                  /* This would verify the account */
-                }}
+                onPress={handleCheckRecipient}
                 variant="outline"
                 style={styles.checkButton}
               />
@@ -270,10 +274,11 @@ const [successAccount, setSuccessAccount] = useState('');
           </View>
 
           <TextInput
-            label="Recipient Name"
+            label="Recipient Name*"
             value={recipientName}
             onChangeText={setRecipientName}
-            placeholder="Enter recipient name"
+            placeholder="Recipient name will appear here"
+            editable={false}
           />
 
           <View style={styles.modalActionContainer}>
@@ -341,70 +346,69 @@ const [successAccount, setSuccessAccount] = useState('');
 
       {/* Success Modal */}
       <Modal
-  visible={successModalVisible}
-  onClose={handleDone}
-  title=""
-  primaryButton={{
-    title: 'Done',
-    onPress: handleDone,
-  }}
->
-  <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-    <View
-      style={{
-        backgroundColor: '#4CAF50',
-        padding: 10,
-        marginBottom: 16,
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Text style={{ fontSize: 32, color: 'white' }}>✓</Text>
-    </View>
-    <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 16 }}>
-      Transfer Successful
-    </Text>
-
-    <View style={{ width: '100%', marginBottom: 24 }}>
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          marginBottom: 12,
+        visible={successModalVisible}
+        onClose={handleDone}
+        title=""
+        primaryButton={{
+          title: 'Done',
+          onPress: handleDone,
         }}
       >
-        <Text style={{ fontSize: 16, color: '#666' }}>Amount:</Text>
-        <Text style={{ fontSize: 16, fontWeight: '600' }}>
-          {formatCurrency(Number(successAmount) || 0)}
-        </Text>
-      </View>
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          marginBottom: 12,
-        }}
-      >
-        <Text style={{ fontSize: 16, color: '#666' }}>Recipient:</Text>
-        <Text style={{ fontSize: 16, fontWeight: '600' }}>
-          {successRecipient}
-        </Text>
-      </View>
-      <View
-        style={{ flexDirection: 'row', justifyContent: 'space-between' }}
-      >
-        <Text style={{ fontSize: 16, color: '#666' }}>Account:</Text>
-        <Text style={{ fontSize: 16, fontWeight: '600' }}>
-          {successAccount}
-        </Text>
-      </View>
-    </View>
-  </View>
-</Modal>
+        <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+          <View
+            style={{
+              backgroundColor: '#4CAF50',
+              padding: 10,
+              marginBottom: 16,
+              width: 64,
+              height: 64,
+              borderRadius: 32,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{ fontSize: 32, color: 'white' }}>✓</Text>
+          </View>
+          <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 16 }}>
+            Transfer Successful
+          </Text>
 
+          <View style={{ width: '100%', marginBottom: 24 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                marginBottom: 12,
+              }}
+            >
+              <Text style={{ fontSize: 16, color: '#666' }}>Amount:</Text>
+              <Text style={{ fontSize: 16, fontWeight: '600' }}>
+                {formatCurrency(Number(successAmount) || 0)}
+              </Text>
+            </View>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                marginBottom: 12,
+              }}
+            >
+              <Text style={{ fontSize: 16, color: '#666' }}>Recipient:</Text>
+              <Text style={{ fontSize: 16, fontWeight: '600' }}>
+                {successRecipient}
+              </Text>
+            </View>
+            <View
+              style={{ flexDirection: 'row', justifyContent: 'space-between' }}
+            >
+              <Text style={{ fontSize: 16, color: '#666' }}>Account:</Text>
+              <Text style={{ fontSize: 16, fontWeight: '600' }}>
+                {successAccount}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={pinModalVisible}
@@ -488,14 +492,25 @@ const styles = StyleSheet.create({
   selectedRecipient: {
     padding: 12,
   },
+  selectedRecipientCard: {
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#FAFAFA',
+  },
+  
   selectedRecipientName: {
     fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
+    fontWeight: '600',
+    color: '#333',
   },
+  
   selectedRecipientAccount: {
     fontSize: 14,
     color: '#666',
+    marginTop: 4,
   },
   favoriteAction: {
     alignItems: 'flex-end',

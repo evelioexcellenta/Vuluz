@@ -11,7 +11,10 @@ interface FavoritesListProps {
 
 export function FavoritesList({ favorites, onSelectFavorite, onRemoveFavorite }: FavoritesListProps) {
   const renderItem = ({ item }: { item: Recipient }) => (
-    <View style={styles.favoriteItem}>
+    <TouchableOpacity
+      style={styles.favoriteItem}
+      onPress={() => onSelectFavorite(item)}
+    >
       <View style={styles.avatarContainer}>
         <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
       </View>
@@ -25,8 +28,9 @@ export function FavoritesList({ favorites, onSelectFavorite, onRemoveFavorite }:
       >
         <Trash2 size={20} color="#EB5757" />
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
+  
   
   return (
     <View style={styles.container}>
