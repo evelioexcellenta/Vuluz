@@ -1,54 +1,17 @@
-import { format, formatDistance } from 'date-fns';
-
-// Format currency with local settings
-export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+export const formatCurrency = (value: number): string => {
+  return `Rp ${value.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-// Format date to human-readable string
 export const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
-  return format(date, 'MMM d, yyyy');
+  return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-// Format date and time
-export const formatDateTime = (dateString: string): string => {
-  const date = new Date(dateString);
-  return format(date, 'MMM d, yyyy h:mm a');
+export const formatAccountNumber = (accountNumber: string): string => {
+  // Format account number with spaces every 4 digits
+  return accountNumber.replace(/(\d{4})/g, '$1 ').trim();
 };
 
-// Format relative time (e.g., "2 days ago")
-export const formatRelativeTime = (dateString: string): string => {
-  const date = new Date(dateString);
-  return formatDistance(date, new Date(), { addSuffix: true });
-};
-
-// Format percentage
-export const formatPercentage = (value: number): string => {
-  return `${(value * 100).toFixed(1)}%`;
-};
-
-// Mask account number (show only last 4 digits)
-export const maskAccountNumber = (accountNumber: string): string => {
-  if (!accountNumber || accountNumber.length < 4) {
-    return '****';
-  }
-  return '•••• ' + accountNumber.slice(-4);
-};
-
-// Format name as initials
-export const formatInitials = (name: string): string => {
-  if (!name) return '';
-  
-  const parts = name.split(' ');
-  if (parts.length === 1) {
-    return parts[0].charAt(0).toUpperCase();
-  }
-  
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+export const formatMonthYear = (date: Date): string => {
+  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 };

@@ -1,267 +1,302 @@
-import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  TouchableOpacity,
-  Modal,
-  Alert,
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '@/hooks/useTheme';
 import { useWallet } from '@/hooks/useWallet';
-import { useFavorites } from '@/hooks/useFavorites';
-import TransferForm from '@/components/screens/TransferForm';
-import FavoritesList from '@/components/screens/FavoritesList';
+import { TextInput } from '@/components/ui/TextInput';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { formatCurrency } from '@/utils/formatters';
-import Input from '@/components/common/Input';
-import Button from '@/components/common/Button';
-import { X } from 'lucide-react-native';
+import { FavoritesList } from '@/components/transfer/FavoritesList';
+import { Card } from '@/components/ui/Card';
+import { Star } from 'lucide-react-native';
 
 export default function TransferScreen() {
-  const { isDark } = useTheme();
-  const { balance, transferMoney, isLoading } = useWallet();
-  const { favorites, addFavorite, updateLastUsed } = useFavorites();
+  const {
+    amount,
+    setAmount,
+    description,
+    setDescription,
+    recipientAccount,
+    setRecipientAccount,
+    recipientName,
+    setRecipientName,
+    selectedRecipient,
+    setSelectedRecipient,
+    recipients,
+    fetchRecipients,
+    handleTransfer,
+    handleAddFavorite,
+    removeFavorite,
+    isLoading,
+    error,
+  } = useWallet();
   
-  const [activeTab, setActiveTab] = useState('new');
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [transferDetails, setTransferDetails] = useState({
-    recipientId: '',
-    recipientName: '',
-    amount: 0,
-    note: '',
-  });
+  const [activeTab, setActiveTab] = useState<'favorites' | 'manual'>('favorites');
+  const [favoritesModalVisible, setFavoritesModalVisible] = useState(false);
+  const [addFavoriteModalVisible, setAddFavoriteModalVisible] = useState(false);
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
   
-  const handleTransfer = async (recipientId: string, amount: number, note?: string) => {
-    // In a real app, you'd get the recipient name from an API
-    const recipientName = 'Recipient Name';
-    
-    setTransferDetails({
-      recipientId,
-      recipientName,
-      amount,
-      note: note || '',
-    });
-    
-    setShowConfirmModal(true);
+  useEffect(() => {
+    fetchRecipients();
+  }, [fetchRecipients]);
+  
+  const handleSelectRecipient = (recipient: any) => {
+    setSelectedRecipient(recipient.accountNumber);
+    setFavoritesModalVisible(false);
   };
   
-  const confirmTransfer = async () => {
-    try {
-      await transferMoney(
-        transferDetails.recipientId,
-        transferDetails.amount,
-        transferDetails.note
-      );
-      
-      // Add to favorites option would be here in a real app
-      setShowConfirmModal(false);
-      
-      Alert.alert(
-        'Transfer Successful',
-        `You have sent ${formatCurrency(transferDetails.amount)} to ${transferDetails.recipientName}.`,
-        [
-          {
-            text: 'Add to Favorites',
-            onPress: () => {
-              addFavorite(
-                transferDetails.recipientId,
-                transferDetails.recipientName
-              );
-            },
-          },
-          { text: 'OK', style: 'default' },
-        ]
-      );
-    } catch (error) {
-      setShowConfirmModal(false);
-      Alert.alert('Transfer Failed', error instanceof Error ? error.message : 'An error occurred');
+  const handleContinue = () => {
+    setConfirmModalVisible(true);
+  };
+  
+  const handleConfirmTransfer = async () => {
+    const success = await handleTransfer();
+    setConfirmModalVisible(false);
+    if (success) {
+      setSuccessModalVisible(true);
     }
   };
   
-  const handleFavoriteTransfer = (favorite: any) => {
-    // Pre-fill transfer form or show confirmation directly
-    setTransferDetails({
-      recipientId: favorite.recipientId,
-      recipientName: favorite.recipientName,
-      amount: 0, // The user still needs to enter an amount
-      note: '',
-    });
-    
-    // Update last used timestamp
-    updateLastUsed(favorite.id);
-    
-    // Switch to the new transfer tab
-    setActiveTab('new');
+  const handleDone = () => {
+    setSuccessModalVisible(false);
+  };
+  
+  const handleSaveFavorite = async () => {
+    if (recipientAccount && recipientName) {
+      const success = await handleAddFavorite();
+      if (success) {
+        setAddFavoriteModalVisible(false);
+      }
+    }
+  };
+  
+  const getSelectedRecipientName = () => {
+    if (!selectedRecipient) return null;
+    const recipient = recipients.find(r => r.accountNumber === selectedRecipient);
+    return recipient ? recipient.name : null;
+  };
+
+  const getReceipientAccountLabel = () => {
+    return activeTab === 'favorites' ? 'Select Recipient' : 'Account Number*';
   };
   
   return (
-    <SafeAreaView style={[
-      styles.container,
-      isDark ? styles.containerDark : styles.containerLight,
-    ]}>
-      {/* Tab Navigation */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === 'new' && (isDark ? styles.activeTabDark : styles.activeTabLight),
-          ]}
-          onPress={() => setActiveTab('new')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'new' && styles.activeTabText,
-              isDark ? styles.textDark : styles.textLight,
-            ]}
-          >
-            New Transfer
-          </Text>
-        </TouchableOpacity>
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Transfer Money</Text>
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'favorites' && styles.activeTab]}
+              onPress={() => setActiveTab('favorites')}
+            >
+              <Text style={[styles.tabText, activeTab === 'favorites' && styles.activeTabText]}>
+                Favorite Recipients
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'manual' && styles.activeTab]}
+              onPress={() => setActiveTab('manual')}
+            >
+              <Text style={[styles.tabText, activeTab === 'manual' && styles.activeTabText]}>
+                Manual Transfer
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
         
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === 'favorites' && (isDark ? styles.activeTabDark : styles.activeTabLight),
-          ]}
-          onPress={() => setActiveTab('favorites')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'favorites' && styles.activeTabText,
-              isDark ? styles.textDark : styles.textLight,
-            ]}
-          >
-            Favorites
-          </Text>
-        </TouchableOpacity>
-      </View>
-      
-      {/* Content based on active tab */}
-      <View style={styles.content}>
-        {activeTab === 'new' ? (
-          <TransferForm
-            balance={balance}
-            onTransfer={handleTransfer}
-            onSearchRecipient={() => {}}
-            isLoading={isLoading}
-          />
-        ) : (
-          <FavoritesList
-            favorites={favorites}
-            isLoading={isLoading}
-            onFavoritePress={handleFavoriteTransfer}
-            onEditPress={() => {}}
-            emptyText="You don't have any favorites yet. They will appear here after you make transfers."
-          />
-        )}
-      </View>
-      
-      {/* Confirmation Modal */}
-      <Modal
-        visible={showConfirmModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowConfirmModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[
-            styles.modalContent,
-            isDark ? styles.modalContentDark : styles.modalContentLight,
-          ]}>
-            <View style={styles.modalHeader}>
-              <Text style={[
-                styles.modalTitle,
-                isDark ? styles.textDark : styles.textLight,
-              ]}>
-                Confirm Transfer
-              </Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setShowConfirmModal(false)}
-              >
-                <X size={24} color={isDark ? '#E2E8F0' : '#1E293B'} />
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.modalBody}>
-              <Text style={[
-                styles.confirmLabel,
-                isDark ? styles.textSecondaryDark : styles.textSecondaryLight,
-              ]}>
-                You are about to send
-              </Text>
-              <Text style={[
-                styles.confirmAmount,
-                isDark ? styles.textDark : styles.textLight,
-              ]}>
-                {formatCurrency(transferDetails.amount)}
-              </Text>
-              
-              <Text style={[
-                styles.confirmLabel,
-                isDark ? styles.textSecondaryDark : styles.textSecondaryLight,
-              ]}>
-                to
-              </Text>
-              <Text style={[
-                styles.confirmRecipient,
-                isDark ? styles.textDark : styles.textLight,
-              ]}>
-                {transferDetails.recipientName}
-              </Text>
-              
-              {transferDetails.note && (
-                <>
-                  <Text style={[
-                    styles.confirmLabel,
-                    isDark ? styles.textSecondaryDark : styles.textSecondaryLight,
-                  ]}>
-                    Note
-                  </Text>
-                  <Text style={[
-                    styles.confirmNote,
-                    isDark ? styles.textDark : styles.textLight,
-                  ]}>
-                    {transferDetails.note}
-                  </Text>
-                </>
-              )}
-              
-              <View style={styles.pinContainer}>
-                <Text style={[
-                  styles.pinLabel,
-                  isDark ? styles.textDark : styles.textLight,
-                ]}>
-                  Enter PIN to confirm
-                </Text>
-                <Input
-                  placeholder="Enter 4-digit PIN"
-                  value=""
-                  onChangeText={() => {}}
-                  secureTextEntry
-                  keyboardType="numeric"
-                  maxLength={4}
-                />
+        <View style={styles.transferContainer}>
+          {activeTab === 'favorites' ? (
+            <View>
+              <Text style={styles.sectionTitle}>Transfer to Favorites</Text>
+              <View style={styles.recipientSelection}>
+                <Text style={styles.label}>{getReceipientAccountLabel()}</Text>
+                {selectedRecipient ? (
+                  <Card style={styles.selectedRecipient}>
+                    <Text style={styles.selectedRecipientName}>{getSelectedRecipientName()}</Text>
+                    <Text style={styles.selectedRecipientAccount}>{selectedRecipient}</Text>
+                  </Card>
+                ) : (
+                  <Button
+                    title="Show Favorites"
+                    onPress={() => setFavoritesModalVisible(true)}
+                    variant="outline"
+                  />
+                )}
               </View>
             </View>
-            
-            <View style={styles.modalFooter}>
-              <Button
-                title="Cancel"
-                onPress={() => setShowConfirmModal(false)}
-                type="outline"
-                style={styles.cancelButton}
+          ) : (
+            <View>
+              <Text style={styles.sectionTitle}>Transfer Money</Text>
+              <Text style={styles.sectionSubtitle}>Send money to another account</Text>
+              <TextInput
+                label="Account Number*"
+                value={recipientAccount}
+                onChangeText={setRecipientAccount}
+                placeholder="Enter account number"
+                keyboardType="numeric"
               />
+              <TextInput
+                label="Recipient Name*"
+                value={recipientName}
+                onChangeText={setRecipientName}
+                placeholder="Enter recipient name"
+              />
+              <View style={styles.favoriteAction}>
+                <TouchableOpacity style={styles.favoriteButton}>
+                  <Star size={16} color="#7C5DF9" />
+                  <Text style={styles.favoriteButtonText}>Add to Favorites</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+          
+          <TextInput
+            label="Amount*"
+            value={amount}
+            onChangeText={setAmount}
+            placeholder="0"
+            keyboardType="numeric"
+          />
+          
+          <TextInput
+            label="Description"
+            value={description}
+            onChangeText={setDescription}
+            placeholder="What's this transfer for?"
+            multiline
+            numberOfLines={3}
+          />
+          
+          <Button
+            title="Continue"
+            onPress={handleContinue}
+            style={styles.button}
+            disabled={!amount || (!selectedRecipient && !recipientAccount)}
+          />
+        </View>
+      </ScrollView>
+      
+      {/* Favorites Modal */}
+      <Modal
+        visible={favoritesModalVisible}
+        onClose={() => setFavoritesModalVisible(false)}
+        title="Add Favorite"
+      >
+        <View>
+          <View style={styles.addFavoriteForm}>
+            <TextInput
+              label="Input Account Number"
+              value={recipientAccount}
+              onChangeText={setRecipientAccount}
+              placeholder="Enter account number"
+              keyboardType="numeric"
+            />
+            <View style={styles.inlineAction}>
               <Button
-                title="Confirm Transfer"
-                onPress={confirmTransfer}
-                loading={isLoading}
-                style={styles.confirmButton}
+                title="Check"
+                onPress={() => {/* This would verify the account */}}
+                variant="outline"
+                style={styles.checkButton}
               />
             </View>
+          </View>
+          
+          <TextInput
+            label="Recipient Name"
+            value={recipientName}
+            onChangeText={setRecipientName}
+            placeholder="Enter recipient name"
+          />
+          
+          <View style={styles.modalActionContainer}>
+            <Button
+              title="Add"
+              onPress={handleSaveFavorite}
+              disabled={!recipientAccount || !recipientName}
+            />
+          </View>
+          
+          <FavoritesList
+            favorites={recipients}
+            onSelectFavorite={handleSelectRecipient}
+            onRemoveFavorite={removeFavorite}
+          />
+        </View>
+      </Modal>
+      
+      {/* Confirm Transfer Modal */}
+      <Modal
+        visible={confirmModalVisible}
+        onClose={() => setConfirmModalVisible(false)}
+        title="Confirm Transfer"
+        primaryButton={{
+          title: "Confirm Transfer",
+          onPress: handleConfirmTransfer,
+          loading: isLoading,
+        }}
+        secondaryButton={{
+          title: "Cancel",
+          onPress: () => setConfirmModalVisible(false),
+        }}
+      >
+        <View style={styles.modalContent}>
+          <Text style={styles.modalText}>You are about to transfer:</Text>
+          
+          <View style={styles.modalItem}>
+            <Text style={styles.modalLabel}>Amount:</Text>
+            <Text style={styles.modalValue}>{formatCurrency(Number(amount) || 0)}</Text>
+          </View>
+          
+          <View style={styles.modalItem}>
+            <Text style={styles.modalLabel}>To:</Text>
+            <Text style={styles.modalValue}>
+              {activeTab === 'favorites' ? getSelectedRecipientName() : recipientName}
+            </Text>
+          </View>
+          
+          <View style={styles.modalItem}>
+            <Text style={styles.modalLabel}>Account:</Text>
+            <Text style={styles.modalValue}>
+              {activeTab === 'favorites' ? selectedRecipient : recipientAccount}
+            </Text>
+          </View>
+          
+          <Text style={styles.modalFooter}>Please verify the information before proceeding.</Text>
+        </View>
+      </Modal>
+      
+      {/* Success Modal */}
+      <Modal
+        visible={successModalVisible}
+        onClose={handleDone}
+        title="Transfer Successful"
+        primaryButton={{
+          title: "Done",
+          onPress: handleDone,
+        }}
+      >
+        <View style={styles.modalContent}>
+          <Text style={styles.modalText}>Your transfer was completed successfully.</Text>
+          
+          <View style={styles.modalItem}>
+            <Text style={styles.modalLabel}>Amount:</Text>
+            <Text style={styles.modalValue}>{formatCurrency(Number(amount) || 0)}</Text>
+          </View>
+          
+          <View style={styles.modalItem}>
+            <Text style={styles.modalLabel}>To:</Text>
+            <Text style={styles.modalValue}>
+              {activeTab === 'favorites' ? getSelectedRecipientName() : recipientName}
+            </Text>
+          </View>
+          
+          <View style={styles.modalItem}>
+            <Text style={styles.modalLabel}>Account:</Text>
+            <Text style={styles.modalValue}>
+              {activeTab === 'favorites' ? selectedRecipient : recipientAccount}
+            </Text>
           </View>
         </View>
       </Modal>
@@ -272,127 +307,135 @@ export default function TransferScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
-  containerLight: {
-    backgroundColor: '#F8FAFC',
+  scrollView: {
+    flex: 1,
   },
-  containerDark: {
-    backgroundColor: '#121212',
+  scrollContent: {
+    padding: 16,
+  },
+  header: {
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 16,
   },
   tabContainer: {
     flexDirection: 'row',
-    marginHorizontal: 16,
-    marginVertical: 16,
-    borderRadius: 8,
-    overflow: 'hidden',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
   tab: {
-    flex: 1,
     paddingVertical: 12,
-    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginRight: 8,
   },
-  activeTabLight: {
-    backgroundColor: '#FFFFFF',
+  activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#0066FF',
-  },
-  activeTabDark: {
-    backgroundColor: '#1E1E1E',
-    borderBottomWidth: 2,
-    borderBottomColor: '#52A9FF',
+    borderBottomColor: '#7C5DF9',
   },
   tabText: {
     fontSize: 14,
-    fontWeight: '500',
+    color: '#666',
   },
   activeTabText: {
+    color: '#7C5DF9',
     fontWeight: '600',
   },
-  content: {
-    flex: 1,
+  transferContainer: {
+    marginTop: 8,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  modalContent: {
-    width: '90%',
-    borderRadius: 16,
-    padding: 24,
-  },
-  modalContentLight: {
-    backgroundColor: '#FFFFFF',
-  },
-  modalContentDark: {
-    backgroundColor: '#1E1E1E',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  closeButton: {
-    padding: 4,
-  },
-  modalBody: {
-    marginBottom: 24,
-  },
-  confirmLabel: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  confirmAmount: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 16,
-  },
-  confirmRecipient: {
+  sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  confirmNote: {
-    fontSize: 16,
-    marginBottom: 16,
-  },
-  pinContainer: {
-    marginTop: 16,
-  },
-  pinLabel: {
-    fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
   },
-  modalFooter: {
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+  },
+  recipientSelection: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+    color: '#333',
+  },
+  selectedRecipient: {
+    padding: 12,
+  },
+  selectedRecipientName: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  selectedRecipientAccount: {
+    fontSize: 14,
+    color: '#666',
+  },
+  favoriteAction: {
+    alignItems: 'flex-end',
+    marginBottom: 16,
+  },
+  favoriteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  favoriteButtonText: {
+    marginLeft: 4,
+    color: '#7C5DF9',
+    fontWeight: '500',
+  },
+  button: {
+    marginTop: 24,
+  },
+  addFavoriteForm: {
+    marginBottom: 16,
+  },
+  inlineAction: {
+    alignItems: 'flex-end',
+    marginTop: -8,
+  },
+  checkButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  modalActionContainer: {
+    marginVertical: 16,
+  },
+  modalContent: {
+    paddingVertical: 8,
+  },
+  modalText: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 16,
+  },
+  modalItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  cancelButton: {
-    flex: 1,
-    marginRight: 8,
+  modalLabel: {
+    fontSize: 14,
+    color: '#666',
   },
-  confirmButton: {
-    flex: 2,
-    marginLeft: 8,
+  modalValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
   },
-  textLight: {
-    color: '#1E293B',
-  },
-  textDark: {
-    color: '#E2E8F0',
-  },
-  textSecondaryLight: {
-    color: '#64748B',
-  },
-  textSecondaryDark: {
-    color: '#94A3B8',
+  modalFooter: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 16,
   },
 });
