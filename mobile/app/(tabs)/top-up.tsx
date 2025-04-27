@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useWallet } from '@/hooks/useWallet';
 import { SuggestedAmounts } from '@/components/topup/SuggestedAmounts';
@@ -8,6 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { formatCurrency } from '@/utils/formatters';
 import { ChevronDown } from 'lucide-react-native';
+import { PinInput } from '@/components/ui/PinInput';
 
 export default function TopUpScreen() {
   const {
@@ -22,61 +29,102 @@ export default function TopUpScreen() {
     handleTopUp,
     isLoading,
     error,
+    resetForm,
   } = useWallet();
-  
+
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
-  const [paymentMethodsModalVisible, setPaymentMethodsModalVisible] = useState(false);
-  
+  const [paymentMethodsModalVisible, setPaymentMethodsModalVisible] =
+    useState(false);
+  const [pinModalVisible, setPinModalVisible] = useState(false);
+  const [pin, setPin] = useState(''); // state untuk menyimpan input pin
+  const [successAmount, setSuccessAmount] = useState('');
+  const [successPaymentMethod, setSuccessPaymentMethod] = useState('');
+
   useEffect(() => {
     fetchPaymentMethods();
   }, [fetchPaymentMethods]);
-  
+
   const suggestedAmounts = [50000, 100000, 200000, 500000];
-  
+
   const handleAmountSelect = (selectedAmount: number) => {
     setAmount(selectedAmount.toString());
   };
-  
+
   const handleContinue = () => {
     setConfirmModalVisible(true);
   };
-  
-  const handleConfirmTopUp = async () => {
-    const success = await handleTopUp();
-    setConfirmModalVisible(false);
-    if (success) {
-      setSuccessModalVisible(true);
-    }
-  };
-  
+
+  // const handleConfirmTopUp = async () => {
+  //   const success = await handleTopUp();
+  //   setConfirmModalVisible(false);
+  //   if (success) {
+  //     setSuccessModalVisible(true);
+  //   }
+  // };
+
   const handleDone = () => {
     setSuccessModalVisible(false);
+    // resetForm(); // baru reset setelah user klik Done
   };
-  
+
   const handleSelectPaymentMethod = (id: string) => {
     setSelectedPaymentMethod(id);
     setPaymentMethodsModalVisible(false);
   };
-  
+
   const getSelectedPaymentMethodName = () => {
     const method = paymentMethods.find((pm) => pm.id === selectedPaymentMethod);
     return method ? method.name : 'Select Payment Method';
   };
+
+  const handleConfirmTopUp = async () => {
+    setConfirmModalVisible(false);
+    setPinModalVisible(true); // Buka modal pin
+
+    // Ketika pin sudah masuk dan valid:
+    const success = await handleTopUp(pin);
+
+    if (success) {
+      setSuccessAmount(amount);
+      setSuccessPaymentMethod(getSelectedPaymentMethodName());
+      setSuccessModalVisible(true);
+      resetForm();
+    }
+  };
+
+  // lalu setelah user input pin dan sukses:
+  const handleSubmitPin = async () => {
+    const success = await handleTopUp(pin); // cukup pin aja, pakai selectedPaymentMethod dari store
+    
+    if (success) {
+      const methodName = getSelectedPaymentMethodName(); // methodName ini hanya untuk tampil di success modal
+      setSuccessAmount(amount);
+      setSuccessPaymentMethod(methodName);
+      setSuccessModalVisible(true);
+      resetForm();
+    }
+    setPinModalVisible(false);
+  };
   
+  
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Add Money</Text>
           <Text style={styles.subtitle}>Top up your account balance</Text>
         </View>
-        
-        <SuggestedAmounts 
-          amounts={suggestedAmounts} 
-          onSelectAmount={handleAmountSelect} 
+
+        <SuggestedAmounts
+          amounts={suggestedAmounts}
+          onSelectAmount={handleAmountSelect}
         />
-        
+
         <View style={styles.form}>
           <TextInput
             label="Amount"
@@ -85,18 +133,20 @@ export default function TopUpScreen() {
             placeholder="0"
             keyboardType="numeric"
           />
-          
+
           <View style={styles.formGroup}>
             <Text style={styles.label}>Payment Method</Text>
             <TouchableOpacity
               style={styles.dropdown}
               onPress={() => setPaymentMethodsModalVisible(true)}
             >
-              <Text style={styles.dropdownText}>{getSelectedPaymentMethodName()}</Text>
+              <Text style={styles.dropdownText}>
+                {getSelectedPaymentMethodName()}
+              </Text>
               <ChevronDown size={20} color="#666" />
             </TouchableOpacity>
           </View>
-          
+
           <TextInput
             label="Description"
             value={description}
@@ -105,7 +155,7 @@ export default function TopUpScreen() {
             multiline
             numberOfLines={3}
           />
-          
+
           <Button
             title="Continue"
             onPress={handleContinue}
@@ -114,64 +164,103 @@ export default function TopUpScreen() {
           />
         </View>
       </ScrollView>
-      
+
       {/* Confirm Top Up Modal */}
       <Modal
         visible={confirmModalVisible}
         onClose={() => setConfirmModalVisible(false)}
         title="Confirm Top Up"
         primaryButton={{
-          title: "Confirm Top Up",
+          title: 'Confirm Top Up',
           onPress: handleConfirmTopUp,
           loading: isLoading,
         }}
         secondaryButton={{
-          title: "Cancel",
+          title: 'Cancel',
           onPress: () => setConfirmModalVisible(false),
         }}
       >
         <View style={styles.modalContent}>
-          <Text style={styles.modalText}>You are about to top up your account with:</Text>
-          
+          <Text style={styles.modalText}>
+            You are about to top up your account with:
+          </Text>
+
           <View style={styles.modalItem}>
             <Text style={styles.modalLabel}>Amount:</Text>
-            <Text style={styles.modalValue}>{formatCurrency(Number(amount) || 0)}</Text>
+            <Text style={styles.modalValue}>
+              {formatCurrency(Number(amount) || 0)}
+            </Text>
           </View>
-          
+
           <View style={styles.modalItem}>
             <Text style={styles.modalLabel}>Payment Method:</Text>
-            <Text style={styles.modalValue}>{getSelectedPaymentMethodName()}</Text>
+            <Text style={styles.modalValue}>
+              {getSelectedPaymentMethodName()}
+            </Text>
           </View>
-          
-          <Text style={styles.modalFooter}>Please verify the information before proceeding.</Text>
+
+          <Text style={styles.modalFooter}>
+            Please verify the information before proceeding.
+          </Text>
         </View>
       </Modal>
-      
+
       {/* Success Modal */}
       <Modal
         visible={successModalVisible}
         onClose={handleDone}
-        title="Top Up Successful"
+        title=""
         primaryButton={{
-          title: "Done",
+          title: 'Done',
           onPress: handleDone,
         }}
       >
-        <View style={styles.modalContent}>
-          <Text style={styles.modalText}>Your top up was completed successfully.</Text>
-          
-          <View style={styles.modalItem}>
-            <Text style={styles.modalLabel}>Amount:</Text>
-            <Text style={styles.modalValue}>{formatCurrency(Number(amount) || 0)}</Text>
+        <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+          <View
+            style={{
+              backgroundColor: '#4CAF50',
+              padding: 10,
+              marginBottom: 16,
+              width: 64,
+              height: 64,
+              borderRadius: 32, // setengah dari width/height supaya bulat
+              alignItems:'center',
+              // resizeMode: 'contain', // Removed as it is not valid for View
+            }}
+          >
+            <Text style={{ fontSize: 32, color: 'white' }}>✓</Text>
           </View>
-          
-          <View style={styles.modalItem}>
-            <Text style={styles.modalLabel}>Payment Method:</Text>
-            <Text style={styles.modalValue}>{getSelectedPaymentMethodName()}</Text>
+          <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 16 }}>
+            Top Up Successful
+          </Text>
+
+          <View style={{ width: '100%', marginBottom: 24 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                marginBottom: 12,
+              }}
+            >
+              <Text style={{ fontSize: 16, color: '#666' }}>Amount:</Text>
+              <Text style={{ fontSize: 16, fontWeight: '600' }}>
+                {formatCurrency(Number(successAmount) || 0)}
+              </Text>
+            </View>
+            <View
+              style={{ flexDirection: 'row', justifyContent: 'space-between' }}
+            >
+              <Text style={{ fontSize: 16, color: '#666' }}>
+                Payment Method:
+              </Text>
+              <Text style={{ fontSize: 16, fontWeight: '600' }}>
+                {successPaymentMethod}
+              </Text>
+            </View>
           </View>
         </View>
       </Modal>
-      
+
       {/* Payment Methods Modal */}
       <Modal
         visible={paymentMethodsModalVisible}
@@ -187,11 +276,26 @@ export default function TopUpScreen() {
             >
               <Text style={styles.paymentMethodName}>{method.name}</Text>
               {method.last4 && (
-                <Text style={styles.paymentMethodDetail}>•••• {method.last4}</Text>
+                <Text style={styles.paymentMethodDetail}>
+                  •••• {method.last4}
+                </Text>
               )}
             </TouchableOpacity>
           ))}
         </View>
+      </Modal>
+
+      <Modal
+        visible={pinModalVisible}
+        onClose={() => setPinModalVisible(false)}
+        title="Enter PIN"
+        primaryButton={{
+          title: 'Confirm',
+          onPress: handleSubmitPin,
+          loading: isLoading,
+        }}
+      >
+        <PinInput pin={pin} setPin={setPin} />
       </Modal>
     </SafeAreaView>
   );

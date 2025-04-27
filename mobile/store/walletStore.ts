@@ -1,5 +1,14 @@
 import { create } from 'zustand';
-import { Transaction, Recipient, PaymentMethod, TransactionSummary } from '@/types';
+import {
+  Transaction,
+  Recipient,
+  PaymentMethod,
+  TransactionSummary,
+} from '@/types';
+import axios from 'axios';
+import { useAuthStore } from '@/store/authStore';
+
+
 
 interface WalletState {
   balance: number;
@@ -9,13 +18,22 @@ interface WalletState {
   transactionSummary: TransactionSummary;
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   fetchTransactions: () => Promise<void>;
   fetchRecipients: () => Promise<void>;
   fetchPaymentMethods: () => Promise<void>;
-  topUp: (amount: number, paymentMethodId: string, description?: string) => Promise<boolean>;
-  transfer: (recipientAccount: string, amount: number, description?: string) => Promise<boolean>;
+  topUp: (
+    amount: number,
+    paymentMethodName: string,
+    pin: string,
+    description?: string
+  ) => Promise<boolean>;
+  transfer: (
+    recipientAccount: string,
+    amount: number,
+    description?: string
+  ) => Promise<boolean>;
   addFavorite: (name: string, accountNumber: string) => Promise<boolean>;
   removeFavorite: (id: string) => Promise<boolean>;
 }
@@ -32,13 +50,13 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   },
   isLoading: false,
   error: null,
-  
+
   fetchTransactions: async () => {
     set({ isLoading: true, error: null });
     try {
       // Simulating API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       // Mock transactions data
       const transactions: Transaction[] = [
         {
@@ -72,19 +90,19 @@ export const useWalletStore = create<WalletState>((set, get) => ({
           status: 'completed',
         },
       ];
-      
+
       set({ transactions, isLoading: false });
     } catch (error) {
       set({ error: 'Failed to fetch transactions', isLoading: false });
     }
   },
-  
+
   fetchRecipients: async () => {
     set({ isLoading: true, error: null });
     try {
       // Simulating API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       // Mock recipients data
       const recipients: Recipient[] = [
         {
@@ -106,19 +124,19 @@ export const useWalletStore = create<WalletState>((set, get) => ({
           isFavorite: true,
         },
       ];
-      
+
       set({ recipients, isLoading: false });
     } catch (error) {
       set({ error: 'Failed to fetch recipients', isLoading: false });
     }
   },
-  
+
   fetchPaymentMethods: async () => {
     set({ isLoading: true, error: null });
     try {
       // Simulating API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       // Mock payment methods data
       const paymentMethods: PaymentMethod[] = [
         {
@@ -137,62 +155,86 @@ export const useWalletStore = create<WalletState>((set, get) => ({
           type: 'ewallet',
         },
       ];
-      
+
       set({ paymentMethods, isLoading: false });
     } catch (error) {
       set({ error: 'Failed to fetch payment methods', isLoading: false });
     }
   },
-  
-  topUp: async (amount, paymentMethodId, description) => {
+
+  topUp: async (amount, paymentMethodName,pin, description) => {
     set({ isLoading: true, error: null });
     try {
-      // Simulating API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Update balance
-      const newBalance = get().balance + amount;
-      
-      // Create new transaction
-      const newTransaction: Transaction = {
-        id: Date.now().toString(),
-        type: 'topup',
-        amount,
-        date: new Date().toISOString().split('T')[0],
-        description: description || 'Top Up',
-        status: 'completed',
-      };
-      
-      set(state => ({
-        balance: newBalance,
-        transactions: [newTransaction, ...state.transactions],
+      const token = useAuthStore.getState().getAccessToken();
+
+      const response = await axios.post(
+        'http://localhost:8080/api/topup',
+        {
+          amount: amount,
+          paymentMethod: paymentMethodName,
+          pin: pin, // TODO: PIN harus dari user input! Bukan hardcode
+          description: description || 'Top up',
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (response.data.status === 'Success') {
+        const newBalance = get().balance + amount;
+
+        const newTransaction: Transaction = {
+          id: Date.now().toString(),
+          type: 'topup', // <--- harus dari pilihan yang valid
+          amount,
+          date: new Date().toISOString().split('T')[0],
+          description: description || 'Top Up',
+          status: 'completed',
+        };
+        
+
+        set((state) => ({
+          balance: newBalance,
+          transactions: [newTransaction, ...state.transactions],
+          isLoading: false,
+        }));
+
+        return true;
+      } else {
+        set({ error: response.data.message, isLoading: false });
+        return false;
+      }
+    } catch (error: any) {
+      set({
+        error: error.response?.data?.message || 'Top up failed',
         isLoading: false,
-      }));
-      
-      return true;
-    } catch (error) {
-      set({ error: 'Top up failed. Please try again.', isLoading: false });
+      });
       return false;
     }
   },
-  
+
   transfer: async (recipientAccount, amount, description) => {
     set({ isLoading: true, error: null });
     try {
       // Simulating API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // Find recipient
-      const recipient = get().recipients.find(r => r.accountNumber === recipientAccount);
-      
+      const recipient = get().recipients.find(
+        (r) => r.accountNumber === recipientAccount
+      );
+
       // Update balance
       const newBalance = get().balance - amount;
-      
+
       if (newBalance < 0) {
         set({ error: 'Insufficient balance', isLoading: false });
         return false;
       }
-      
+
       // Create new transaction
       const newTransaction: Transaction = {
         id: Date.now().toString(),
@@ -204,26 +246,26 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         description: description || 'Transfer',
         status: 'completed',
       };
-      
-      set(state => ({
+
+      set((state) => ({
         balance: newBalance,
         transactions: [newTransaction, ...state.transactions],
         isLoading: false,
       }));
-      
+
       return true;
     } catch (error) {
       set({ error: 'Transfer failed. Please try again.', isLoading: false });
       return false;
     }
   },
-  
+
   addFavorite: async (name, accountNumber) => {
     set({ isLoading: true, error: null });
     try {
       // Simulating API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       // Create new favorite recipient
       const newRecipient: Recipient = {
         id: Date.now().toString(),
@@ -231,33 +273,39 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         accountNumber,
         isFavorite: true,
       };
-      
-      set(state => ({
+
+      set((state) => ({
         recipients: [...state.recipients, newRecipient],
         isLoading: false,
       }));
-      
+
       return true;
     } catch (error) {
-      set({ error: 'Failed to add favorite. Please try again.', isLoading: false });
+      set({
+        error: 'Failed to add favorite. Please try again.',
+        isLoading: false,
+      });
       return false;
     }
   },
-  
+
   removeFavorite: async (id) => {
     set({ isLoading: true, error: null });
     try {
       // Simulating API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      set(state => ({
-        recipients: state.recipients.filter(recipient => recipient.id !== id),
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      set((state) => ({
+        recipients: state.recipients.filter((recipient) => recipient.id !== id),
         isLoading: false,
       }));
-      
+
       return true;
     } catch (error) {
-      set({ error: 'Failed to remove favorite. Please try again.', isLoading: false });
+      set({
+        error: 'Failed to remove favorite. Please try again.',
+        isLoading: false,
+      });
       return false;
     }
   },

@@ -26,18 +26,19 @@ export function useWallet() {
   const [recipientName, setRecipientName] = useState('');
   const [selectedRecipient, setSelectedRecipient] = useState<string | null>(null);
   
-  const handleTopUp = async () => {
-    if (!amount || !selectedPaymentMethod) return false;
-    
+  const handleTopUp = async (pin: string) => {
+    if (!amount || !selectedPaymentMethod || !pin) return false;
+  
     const amountValue = parseFloat(amount.replace(/[^0-9]/g, ''));
     if (isNaN(amountValue) || amountValue <= 0) return false;
-    
-    const success = await topUp(amountValue, selectedPaymentMethod, description);
+  
+    const success = await topUp(amountValue, selectedPaymentMethod, pin, description);
     if (success) {
       resetForm();
     }
     return success;
   };
+  
   
   const handleTransfer = async () => {
     if ((!recipientAccount && !selectedRecipient) || !amount) return false;
