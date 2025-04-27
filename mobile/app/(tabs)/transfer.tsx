@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useWallet } from '@/hooks/useWallet';
 import { TextInput } from '@/components/ui/TextInput';
@@ -29,27 +35,30 @@ export default function TransferScreen() {
     removeFavorite,
     isLoading,
     error,
+    handleCheckRecipient,
   } = useWallet();
-  
-  const [activeTab, setActiveTab] = useState<'favorites' | 'manual'>('favorites');
+
+  const [activeTab, setActiveTab] = useState<'favorites' | 'manual'>(
+    'favorites'
+  );
   const [favoritesModalVisible, setFavoritesModalVisible] = useState(false);
   const [addFavoriteModalVisible, setAddFavoriteModalVisible] = useState(false);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
-  
+
   useEffect(() => {
     fetchRecipients();
   }, [fetchRecipients]);
-  
+
   const handleSelectRecipient = (recipient: any) => {
     setSelectedRecipient(recipient.accountNumber);
     setFavoritesModalVisible(false);
   };
-  
+
   const handleContinue = () => {
     setConfirmModalVisible(true);
   };
-  
+
   const handleConfirmTransfer = async () => {
     const success = await handleTransfer();
     setConfirmModalVisible(false);
@@ -57,11 +66,11 @@ export default function TransferScreen() {
       setSuccessModalVisible(true);
     }
   };
-  
+
   const handleDone = () => {
     setSuccessModalVisible(false);
   };
-  
+
   const handleSaveFavorite = async () => {
     if (recipientAccount && recipientName) {
       const success = await handleAddFavorite();
@@ -70,28 +79,41 @@ export default function TransferScreen() {
       }
     }
   };
-  
+
   const getSelectedRecipientName = () => {
     if (!selectedRecipient) return null;
-    const recipient = recipients.find(r => r.accountNumber === selectedRecipient);
+    const recipient = recipients.find(
+      (r) => r.accountNumber === selectedRecipient
+    );
     return recipient ? recipient.name : null;
   };
 
   const getReceipientAccountLabel = () => {
     return activeTab === 'favorites' ? 'Select Recipient' : 'Account Number*';
   };
-  
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Transfer Money</Text>
           <View style={styles.tabContainer}>
             <TouchableOpacity
-              style={[styles.tab, activeTab === 'favorites' && styles.activeTab]}
+              style={[
+                styles.tab,
+                activeTab === 'favorites' && styles.activeTab,
+              ]}
               onPress={() => setActiveTab('favorites')}
             >
-              <Text style={[styles.tabText, activeTab === 'favorites' && styles.activeTabText]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === 'favorites' && styles.activeTabText,
+                ]}
+              >
                 Favorite Recipients
               </Text>
             </TouchableOpacity>
@@ -99,13 +121,18 @@ export default function TransferScreen() {
               style={[styles.tab, activeTab === 'manual' && styles.activeTab]}
               onPress={() => setActiveTab('manual')}
             >
-              <Text style={[styles.tabText, activeTab === 'manual' && styles.activeTabText]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === 'manual' && styles.activeTabText,
+                ]}
+              >
                 Manual Transfer
               </Text>
             </TouchableOpacity>
           </View>
         </View>
-        
+
         <View style={styles.transferContainer}>
           {activeTab === 'favorites' ? (
             <View>
@@ -114,8 +141,12 @@ export default function TransferScreen() {
                 <Text style={styles.label}>{getReceipientAccountLabel()}</Text>
                 {selectedRecipient ? (
                   <Card style={styles.selectedRecipient}>
-                    <Text style={styles.selectedRecipientName}>{getSelectedRecipientName()}</Text>
-                    <Text style={styles.selectedRecipientAccount}>{selectedRecipient}</Text>
+                    <Text style={styles.selectedRecipientName}>
+                      {getSelectedRecipientName()}
+                    </Text>
+                    <Text style={styles.selectedRecipientAccount}>
+                      {selectedRecipient}
+                    </Text>
                   </Card>
                 ) : (
                   <Button
@@ -129,7 +160,9 @@ export default function TransferScreen() {
           ) : (
             <View>
               <Text style={styles.sectionTitle}>Transfer Money</Text>
-              <Text style={styles.sectionSubtitle}>Send money to another account</Text>
+              <Text style={styles.sectionSubtitle}>
+                Send money to another account
+              </Text>
               <TextInput
                 label="Account Number*"
                 value={recipientAccount}
@@ -137,21 +170,32 @@ export default function TransferScreen() {
                 placeholder="Enter account number"
                 keyboardType="numeric"
               />
+              <Button
+                title="Check"
+                onPress={handleCheckRecipient}
+                variant="outline"
+                style={styles.checkButton}
+              />
+
               <TextInput
                 label="Recipient Name*"
                 value={recipientName}
                 onChangeText={setRecipientName}
-                placeholder="Enter recipient name"
+                placeholder="Recipient name will appear here"
+                editable={false}
+                
               />
               <View style={styles.favoriteAction}>
                 <TouchableOpacity style={styles.favoriteButton}>
                   <Star size={16} color="#7C5DF9" />
-                  <Text style={styles.favoriteButtonText}>Add to Favorites</Text>
+                  <Text style={styles.favoriteButtonText}>
+                    Add to Favorites
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
           )}
-          
+
           <TextInput
             label="Amount*"
             value={amount}
@@ -159,7 +203,7 @@ export default function TransferScreen() {
             placeholder="0"
             keyboardType="numeric"
           />
-          
+
           <TextInput
             label="Description"
             value={description}
@@ -168,7 +212,7 @@ export default function TransferScreen() {
             multiline
             numberOfLines={3}
           />
-          
+
           <Button
             title="Continue"
             onPress={handleContinue}
@@ -177,7 +221,7 @@ export default function TransferScreen() {
           />
         </View>
       </ScrollView>
-      
+
       {/* Favorites Modal */}
       <Modal
         visible={favoritesModalVisible}
@@ -196,20 +240,22 @@ export default function TransferScreen() {
             <View style={styles.inlineAction}>
               <Button
                 title="Check"
-                onPress={() => {/* This would verify the account */}}
+                onPress={() => {
+                  /* This would verify the account */
+                }}
                 variant="outline"
                 style={styles.checkButton}
               />
             </View>
           </View>
-          
+
           <TextInput
             label="Recipient Name"
             value={recipientName}
             onChangeText={setRecipientName}
             placeholder="Enter recipient name"
           />
-          
+
           <View style={styles.modalActionContainer}>
             <Button
               title="Add"
@@ -217,7 +263,7 @@ export default function TransferScreen() {
               disabled={!recipientAccount || !recipientName}
             />
           </View>
-          
+
           <FavoritesList
             favorites={recipients}
             onSelectFavorite={handleSelectRecipient}
@@ -225,73 +271,85 @@ export default function TransferScreen() {
           />
         </View>
       </Modal>
-      
+
       {/* Confirm Transfer Modal */}
       <Modal
         visible={confirmModalVisible}
         onClose={() => setConfirmModalVisible(false)}
         title="Confirm Transfer"
         primaryButton={{
-          title: "Confirm Transfer",
+          title: 'Confirm Transfer',
           onPress: handleConfirmTransfer,
           loading: isLoading,
         }}
         secondaryButton={{
-          title: "Cancel",
+          title: 'Cancel',
           onPress: () => setConfirmModalVisible(false),
         }}
       >
         <View style={styles.modalContent}>
           <Text style={styles.modalText}>You are about to transfer:</Text>
-          
+
           <View style={styles.modalItem}>
             <Text style={styles.modalLabel}>Amount:</Text>
-            <Text style={styles.modalValue}>{formatCurrency(Number(amount) || 0)}</Text>
+            <Text style={styles.modalValue}>
+              {formatCurrency(Number(amount) || 0)}
+            </Text>
           </View>
-          
+
           <View style={styles.modalItem}>
             <Text style={styles.modalLabel}>To:</Text>
             <Text style={styles.modalValue}>
-              {activeTab === 'favorites' ? getSelectedRecipientName() : recipientName}
+              {activeTab === 'favorites'
+                ? getSelectedRecipientName()
+                : recipientName}
             </Text>
           </View>
-          
+
           <View style={styles.modalItem}>
             <Text style={styles.modalLabel}>Account:</Text>
             <Text style={styles.modalValue}>
               {activeTab === 'favorites' ? selectedRecipient : recipientAccount}
             </Text>
           </View>
-          
-          <Text style={styles.modalFooter}>Please verify the information before proceeding.</Text>
+
+          <Text style={styles.modalFooter}>
+            Please verify the information before proceeding.
+          </Text>
         </View>
       </Modal>
-      
+
       {/* Success Modal */}
       <Modal
         visible={successModalVisible}
         onClose={handleDone}
         title="Transfer Successful"
         primaryButton={{
-          title: "Done",
+          title: 'Done',
           onPress: handleDone,
         }}
       >
         <View style={styles.modalContent}>
-          <Text style={styles.modalText}>Your transfer was completed successfully.</Text>
-          
+          <Text style={styles.modalText}>
+            Your transfer was completed successfully.
+          </Text>
+
           <View style={styles.modalItem}>
             <Text style={styles.modalLabel}>Amount:</Text>
-            <Text style={styles.modalValue}>{formatCurrency(Number(amount) || 0)}</Text>
+            <Text style={styles.modalValue}>
+              {formatCurrency(Number(amount) || 0)}
+            </Text>
           </View>
-          
+
           <View style={styles.modalItem}>
             <Text style={styles.modalLabel}>To:</Text>
             <Text style={styles.modalValue}>
-              {activeTab === 'favorites' ? getSelectedRecipientName() : recipientName}
+              {activeTab === 'favorites'
+                ? getSelectedRecipientName()
+                : recipientName}
             </Text>
           </View>
-          
+
           <View style={styles.modalItem}>
             <Text style={styles.modalLabel}>Account:</Text>
             <Text style={styles.modalValue}>

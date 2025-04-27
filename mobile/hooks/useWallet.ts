@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useWalletStore } from '@/store/walletStore';
+import axios from 'axios'; 
+import { useAuthStore } from '@/store/authStore';
 
 export function useWallet() {
   const {
@@ -64,6 +66,24 @@ export function useWallet() {
     }
     return success;
   };
+
+  const handleCheckRecipient = async () => {
+    try {
+      const token = useAuthStore.getState().getAccessToken(); // ambil token JWT kamu
+  
+      const response = await axios.get(`http://localhost:8080/api/wallet/owner/${recipientAccount}`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // kirim token di headers!
+        },
+      });
+  
+      setRecipientName(response.data.fullName);
+    } catch (error) {
+      console.error(error);
+      setRecipientName('User not found');
+    }
+  };
+  
   
   const resetForm = () => {
     setAmount('');
@@ -101,6 +121,7 @@ export function useWallet() {
     handleTransfer,
     handleAddFavorite,
     removeFavorite,
-    resetForm
+    resetForm,
+    handleCheckRecipient,
   };
 }

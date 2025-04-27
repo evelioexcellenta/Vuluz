@@ -12,6 +12,7 @@ interface TextInputProps {
   style?: ViewStyle;
   multiline?: boolean;
   numberOfLines?: number;
+  editable?: boolean;
 }
 
 export function TextInput({
@@ -25,6 +26,7 @@ export function TextInput({
   style,
   multiline = false,
   numberOfLines = 1,
+  editable = true, // default true
 }: TextInputProps) {
   return (
     <View style={[styles.container, style]}>
@@ -34,6 +36,7 @@ export function TextInput({
           styles.input,
           multiline && styles.multiline,
           error && styles.inputError,
+          !editable && styles.inputDisabled, // <<< ini, kalau disable
         ]}
         value={value}
         onChangeText={onChangeText}
@@ -42,6 +45,8 @@ export function TextInput({
         keyboardType={keyboardType}
         multiline={multiline}
         numberOfLines={multiline ? numberOfLines : 1}
+        editable={editable}
+        placeholderTextColor={editable ? '#999' : '#bbb'} // placeholder lebih soft kalau disabled
       />
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
@@ -66,6 +71,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     backgroundColor: '#FFFFFF',
+    color: '#000000', // normal text color
   },
   multiline: {
     minHeight: 100,
@@ -73,6 +79,10 @@ const styles = StyleSheet.create({
   },
   inputError: {
     borderColor: '#FF6B6B',
+  },
+  inputDisabled: {
+    backgroundColor: '#F5F5F5', // <<< warna latar belakang kalau disabled
+    color: '#666666',             // <<< warna teks agak gelap
   },
   errorText: {
     color: '#FF6B6B',
