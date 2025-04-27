@@ -20,7 +20,7 @@ const CardHeader = ({
   return (
     <div className={`card-header ${className}`}>
       {title && (
-        <div className="mb-1">
+        <div className="">
           <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
           {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
         </div>

@@ -27,14 +27,7 @@ const TopUpForm = ({
   const [pendingData, setPendingData] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  // Form validation with react-hook-form
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    watch,
-  } = useForm({
+  const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm({
     defaultValues: {
       amount: "",
       paymentMethod: APP_CONFIG.PAYMENT_METHODS[0].id,
@@ -42,49 +35,22 @@ const TopUpForm = ({
     },
   });
 
-  // Watch values for confirmation display
   const amountValue = watch("amount");
   const methodValue = watch("paymentMethod");
 
-  // Get payment method name from ID
   const getMethodName = (methodId) => {
     const method = APP_CONFIG.PAYMENT_METHODS.find((m) => m.id === methodId);
     return method ? method.name : methodId;
   };
 
-  // Handle form validation and open confirmation modal
   const handleFormSubmit = (data) => {
     setFormData(data);
     setShowConfirmation(true);
   };
 
-  // Handle actual form submission after confirmation
-  // const handleConfirmTopUp = async () => {
-  //   try {
-  //     setShowPinModal(false);
-
-  //     const result = await onSubmit({ ...formData, pin: pinInput });
-
-  //     if (result.success) {
-  //       setShowSuccessModal(true); // 🎯 Show success modal
-  //       reset();
-  //     } else {
-  //       if (result.error === "JWT token expired") {
-  //         setError("Please Relogin");
-  //       } else {
-  //         setError("Top-up failed. Please try again.");
-  //       }
-  //     }
-  //   } catch (err) {
-  //     setError(err.message || "An unexpected error occurred.");
-  //   }
-  // };
-
-  // ketika user masukkan PIN dan confirm
   const handlePinConfirm = async (pin) => {
     try {
       setShowPinModal(false);
-
       const finalData = { ...pendingData, pin };
       const result = await onSubmit(finalData);
 
@@ -92,54 +58,29 @@ const TopUpForm = ({
         setShowSuccessModal(true);
         reset();
       } else {
-        if (result.error === "JWT token expired") {
-          setError("Please Relogin");
-        } else {
-          setError("Top-up failed. Please try again.");
-        }
+        setError(result.error || "Top-up failed. Please try again.");
       }
     } catch (err) {
       setError(err.message || "An unexpected error occurred.");
     }
   };
 
-  // success alert
-  const handleDismissSuccess = () => {
-    setSuccess(false);
-  };
-
-  const handleDismissError = () => {
-    setError("");
-  };
-
   return (
     <Card className={`animate-fade-in ${className}`}>
       <Card.Header title="Add Money" subtitle="Top up your account balance" />
       <Card.Body>
-        {success && (
-          <Alert
-            type="success"
-            title="Top-Up Successful"
-            message="Your account has been credited successfully."
-            onClose={handleDismissSuccess}
-            autoClose={true}
-            className="mb-4"
-          />
-        )}
 
+        {success && (
+          <Alert type="success" title="Top-Up Successful" onClose={() => setSuccess(false)} autoClose />
+        )}
         {error && (
-          <Alert
-            type="error"
-            title="Top-Up Failed"
-            message={error}
-            onClose={handleDismissError}
-            className="mb-4"
-          />
+          <Alert type="error" title="Top-Up Failed" message={error} onClose={() => setError("")} />
         )}
 
         <form onSubmit={handleSubmit(handleFormSubmit)}>
           <div className="space-y-4">
-            {/* Preset Amounts */}
+
+            {/* Preset Buttons */}
             <div className="form-control">
               <label className="form-label">Suggested Amounts</label>
               <div className="grid grid-cols-3 gap-2 mt-1">
@@ -148,9 +89,7 @@ const TopUpForm = ({
                     key={amount}
                     type="button"
                     className="py-2 px-4 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-800 text-sm font-medium"
-                    onClick={() => {
-                      reset({ ...watch(), amount: amount.toString() });
-                    }}
+                    onClick={() => setValue("amount", amount)}
                   >
                     {formatCurrency(amount)}
                   </button>
@@ -158,48 +97,42 @@ const TopUpForm = ({
               </div>
             </div>
 
-            {/* Amount */}
+            {/* Amount Input */}
             <Input
               label="Amount"
               type="number"
               id="amount"
-              step="0.01"
+              step="1"
               min={minTopUpAmount}
               max={maxTopUpAmount}
               {...register("amount", {
+                valueAsNumber: true, // ✅ FIX amount jadi number
                 required: "Amount is required",
                 validate: {
                   validAmount: (value) =>
                     isValidAmount(value) || "Please enter a valid amount",
                   minAmount: (value) =>
                     isAmountInRange(value, minTopUpAmount, maxTopUpAmount) ||
-                    `Amount must be between ${formatCurrency(
-                      minTopUpAmount
-                    )} and ${formatCurrency(maxTopUpAmount)}`,
+                    `Amount must be between ${formatCurrency(minTopUpAmount)} and ${formatCurrency(maxTopUpAmount)}`,
                 },
               })}
               error={errors.amount?.message}
-              placeholder="0.00"
+              placeholder="0"
               disabled={isLoading}
               required
             />
 
-            {/* Payment Method */}
+            {/* Payment Method Select */}
             <div className="form-control">
-              <label htmlFor="method" className="form-label">
-                Payment Method
-              </label>
+              <label className="form-label">Payment Method</label>
               <select
-                id="method"
                 className="form-input"
-                {...register("paymentMethod", {
-                  required: "Payment method is required",
-                })}
+                {...register("paymentMethod", { required: "Payment method is required" })}
                 disabled={isLoading}
               >
-                {APP_CONFIG.PAYMENT_METHODS.map((paymentMethod) => (
-                  <option key={paymentMethod.id} value={paymentMethod.id}>
-                    {paymentMethod.name}
+                {APP_CONFIG.PAYMENT_METHODS.map((method) => (
+                  <option key={method.id} value={method.id}>
+                    {method.name}
                   </option>
                 ))}
               </select>
@@ -210,27 +143,20 @@ const TopUpForm = ({
 
             {/* Description */}
             <div className="form-control">
-              <label htmlFor="description" className="form-label">
-                Description (Optional)
-              </label>
+              <label className="form-label">Description (Optional)</label>
               <textarea
-                id="description"
-                rows="2"
                 className="form-input"
-                placeholder="Add a note for your records"
                 {...register("description")}
+                rows="2"
+                placeholder="Add a note for your records"
                 disabled={isLoading}
-              ></textarea>
+              />
             </div>
+
           </div>
 
           <div className="mt-6">
-            <Button
-              type="submit"
-              variant="primary"
-              fullWidth
-              isLoading={isLoading}
-            >
+            <Button type="submit" variant="primary" fullWidth isLoading={isLoading}>
               Continue
             </Button>
           </div>
@@ -244,18 +170,15 @@ const TopUpForm = ({
         title="Confirm Top-Up"
         footer={
           <div className="flex justify-end space-x-3">
-            <Button
-              variant="outline"
-              onClick={() => setShowConfirmation(false)}
-            >
+            <Button variant="outline" onClick={() => setShowConfirmation(false)}>
               Cancel
             </Button>
             <Button
               variant="primary"
               onClick={() => {
-                setShowConfirmation(false); // tutup modal konfirmasi
-                setPendingData(formData); // simpan data form
-                setShowPinModal(true); // buka PIN modal
+                setShowConfirmation(false);
+                setPendingData(formData);
+                setShowPinModal(true);
               }}
               isLoading={isLoading}
             >
@@ -266,22 +189,19 @@ const TopUpForm = ({
       >
         <div className="space-y-4">
           <p className="text-gray-600">You are about to add:</p>
-
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="flex justify-between mb-2">
               <span className="text-gray-500">Amount:</span>
               <span className="font-bold text-gray-800">
-                {formatCurrency(amountValue)}
+                {formatCurrency(formData?.amount || 0)}
               </span>
             </div>
-
             <div className="flex justify-between mb-2">
               <span className="text-gray-500">Method:</span>
               <span className="font-medium text-gray-800">
-                {getMethodName(methodValue)}
+                {getMethodName(formData?.paymentMethod)}
               </span>
             </div>
-
             {formData?.description && (
               <div className="flex justify-between">
                 <span className="text-gray-500">Description:</span>
@@ -289,24 +209,26 @@ const TopUpForm = ({
               </div>
             )}
           </div>
-
           <p className="text-sm text-gray-500 italic">
-            By confirming, you agree to the terms and conditions for this
-            payment method.
+            By confirming, you agree to the terms and conditions for this payment method.
           </p>
         </div>
       </Modal>
+
+      {/* Pin Modal */}
       <PinModal
         isOpen={showPinModal}
         onClose={() => setShowPinModal(false)}
         onConfirm={handlePinConfirm}
         isLoading={isLoading}
       />
+
+      {/* Success Modal */}
       <SuccessModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
-        amount={formatCurrency(amountValue)}
-        paymentMethod={getMethodName(methodValue)}
+        amount={formatCurrency(formData?.amount || 0)}
+        paymentMethod={getMethodName(formData?.paymentMethod)}
       />
     </Card>
   );

@@ -88,7 +88,7 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
 
   return (
     <Card>
-      <Card.Header title="Transfer via Favorite" />
+      <Card.Header title="Transfer via Favorite" subtitle="Send Money to Your Favorite Recipient Quickly" />
       <Card.Body className="space-y-4">
         {error && (
           <Alert
