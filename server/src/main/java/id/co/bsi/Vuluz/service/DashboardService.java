@@ -16,11 +16,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
+import java.time.temporal.WeekFields;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -214,5 +214,102 @@ public class DashboardService {
                 balanceChange
         );
     }
+
+    public List<Map<String, Object>> getCashflowData(String period) {
+        Long userId = securityUtility.getCurrentUserId();
+        User user = userRepository.findById(userId).orElseThrow();
+        Wallet wallet = user.getWallet();
+
+        List<Transaction> transactions = transactionRepository.findByWallet(wallet);
+
+        Map<String, BigDecimal> incomeMap = new HashMap<>();
+        Map<String, BigDecimal> expenseMap = new HashMap<>();
+
+        LocalDate now = LocalDate.now();
+        WeekFields weekFields = WeekFields.of(DayOfWeek.MONDAY, 1);
+
+
+        // Jika daily, tentukan awal minggu (Senin) dan akhir minggu (Minggu)
+        LocalDate startOfWeek = now.with(weekFields.dayOfWeek(), 1); // Monday
+        LocalDate endOfWeek = now.with(weekFields.dayOfWeek(), 7);   // Sunday
+
+        for (Transaction tx : transactions) {
+            LocalDate txDate = toLocalDate(tx.getTransactionDate());
+            String key = "";
+
+            if ("daily".equalsIgnoreCase(period)) {
+                if (txDate.isBefore(startOfWeek) || txDate.isAfter(endOfWeek)) {
+                    continue; // Lewati transaksi di luar minggu ini
+                }
+                key = txDate.getDayOfWeek().toString(); // MONDAY, TUESDAY, etc
+            } else if ("weekly".equalsIgnoreCase(period)) {
+                int week = txDate.get(weekFields.weekOfWeekBasedYear());
+                key = "Week " + week;
+            } else if ("monthly".equalsIgnoreCase(period)) {
+                key = txDate.getMonth().toString().substring(0, 3); // JAN, FEB, etc
+            } else if ("quarterly".equalsIgnoreCase(period)) {
+                int quarter = (txDate.getMonthValue() - 1) / 3 + 1;
+                key = "Q" + quarter;
+            } else {
+                throw new IllegalArgumentException("Invalid period. Use 'daily', 'weekly', 'monthly', or 'quarterly'.");
+            }
+
+            if ("Top Up".equalsIgnoreCase(tx.getTransactionType()) ||
+                    ("Transfer In".equalsIgnoreCase(tx.getTransactionType()) && wallet.getWalletNumber().equals(tx.getToWalletNumber()))) {
+                incomeMap.put(key, incomeMap.getOrDefault(key, BigDecimal.ZERO).add(tx.getAmount()));
+            } else if ("Transfer Out".equalsIgnoreCase(tx.getTransactionType()) && wallet.getWalletNumber().equals(tx.getFromWalletNumber())) {
+                expenseMap.put(key, expenseMap.getOrDefault(key, BigDecimal.ZERO).add(tx.getAmount()));
+            }
+        }
+
+        // Jika daily, pastikan semua hari Senin-Minggu ada walaupun 0
+        List<String> daysOfWeek = Arrays.asList(
+                "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY",
+                "FRIDAY", "SATURDAY", "SUNDAY"
+        );
+        Set<String> allKeys = new HashSet<>();
+        if ("daily".equalsIgnoreCase(period)) {
+            allKeys.addAll(daysOfWeek);
+        } else {
+            allKeys.addAll(incomeMap.keySet());
+            allKeys.addAll(expenseMap.keySet());
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        for (String key : allKeys) {
+            BigDecimal income = incomeMap.getOrDefault(key, BigDecimal.ZERO);
+            BigDecimal expense = expenseMap.getOrDefault(key, BigDecimal.ZERO);
+            BigDecimal net = income.subtract(expense);
+
+            Map<String, Object> item = new HashMap<>();
+            item.put("label", key);
+            item.put("income", income);
+            item.put("expense", expense);
+            item.put("net", net);
+            result.add(item);
+        }
+
+        // Sort
+        if ("daily".equalsIgnoreCase(period)) {
+            Map<String, Integer> dayOrder = Map.of(
+                    "MONDAY", 1,
+                    "TUESDAY", 2,
+                    "WEDNESDAY", 3,
+                    "THURSDAY", 4,
+                    "FRIDAY", 5,
+                    "SATURDAY", 6,
+                    "SUNDAY", 7
+            );
+            result.sort(Comparator.comparing(m -> dayOrder.get((String) m.get("label"))));
+        } else {
+            result.sort(Comparator.comparing(m -> (String) m.get("label")));
+        }
+
+        return result;
+    }
+
+
+
 
 }

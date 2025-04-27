@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 public class DashboardController {
@@ -58,5 +60,20 @@ public class DashboardController {
             return ResponseEntity.status(401).body("Invalid token or user not found");
         }
     }
+
+    @GetMapping("/api/cashflow")
+    public ResponseEntity<?> getCashflow(
+            @RequestParam(defaultValue = "weekly") String period
+    ) {
+        try {
+            List<Map<String, Object>> cashflow = dashboardService.getCashflowData(period);
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", cashflow);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body("Failed to fetch cashflow data: " + e.getMessage());
+        }
+    }
+
 
 }
