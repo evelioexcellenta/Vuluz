@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
+import Toast from 'react-native-toast-message';
+
+
 
 export function useAuth() {
   const {
@@ -25,17 +28,37 @@ export function useAuth() {
   
   const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Input',
+        text2: 'Email and Password cannot be empty',
+        position: 'top',
+      });
       return false;
     }
   
-    const success = await login(loginEmail, loginPassword);
-
-    if (success !== undefined && success !== null) {
-      router.replace('/(tabs)'); // baru redirect kalau beneran sukses
+    await login(loginEmail, loginPassword);
+  
+    const { error } = useAuthStore.getState();
+    if (!error) {
+      Toast.show({
+        type: 'success',
+        text1: 'Login Successful',
+        text2: 'Welcome back!',
+        position: 'top',
+      });
+  
+      router.replace('/(tabs)');
       return true;
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: 'Login Failed',
+        text2: error || 'Please check your credentials',
+        position: 'top',
+      });
+      return false;
     }
-    
-    return false;
   };
   
   

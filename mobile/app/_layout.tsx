@@ -8,12 +8,11 @@ import Toast from 'react-native-toast-message';
 
 export default function RootLayout() {
   useFrameworkReady();
-  const { isAuthenticated, user, checkAuth } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   // Pre-load data
   useEffect(() => {
     // Load initial data if needed
-    checkAuth();
   }, []);
 
   return (

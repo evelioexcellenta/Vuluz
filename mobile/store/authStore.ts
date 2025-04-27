@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { User } from '@/types';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AuthState {
   user: User | null;
@@ -19,7 +18,6 @@ interface AuthState {
   ) => Promise<void>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
-  checkAuth: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -32,21 +30,35 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await axios.post('http://localhost:8080/api/auth/login', {
-        email,
-        password,
+        email: email,
+        password: password,
       });
   
       if (response.data.status === 'OK') {
         const token = response.data.token;
   
-        await AsyncStorage.setItem('token', token);
+        // Simpan token kalau perlu nanti
+        // localStorage.setItem('token', token); // tidak jalan di React Native, kita pakai AsyncStorage nanti kalau mau
   
-        set({ isAuthenticated: true, isLoading: false });
+        set({
+          isAuthenticated: true,
+          user: {
+            id: '',           // sementara kosong, nanti setelah get profile bisa diisi
+            name: '',         // bisa juga fetch nama user
+            email: email,
+            accountNumber: '',
+            balance: 0,
+            phoneNumber: '',
+          },
+          isLoading: false,
+        });
   
+        console.log('Login Success, token:', token);
       } else {
-        set({ error: response.data.message, isLoading: false });
+        set({ error: response.data.message || 'Login failed', isLoading: false });
       }
     } catch (error: any) {
+      console.error(error.response?.data || error.message);
       set({
         error: error.response?.data?.message || 'Login failed',
         isLoading: false,
@@ -54,8 +66,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
   
-  
-
   register: async (name, email, password, gender,username, pin) => {
     set({ isLoading: true, error: null });
     try {
@@ -84,25 +94,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  checkAuth: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      const token = await AsyncStorage.getItem('token');
-      if (token) {
-        set({ isAuthenticated: true, isLoading: false });
-      } else {
-        set({ isAuthenticated: false, isLoading: false });
-      }
-    } catch (error) {
-      set({ isAuthenticated: false, isLoading: false });
-    }
-  },  
-
-  logout: async () => {
-    await AsyncStorage.removeItem('token');
+  logout: () => {
     set({ user: null, isAuthenticated: false });
   },
-  
 
   updateUser: (userData) => {
     set((state) => ({

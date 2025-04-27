@@ -125,7 +125,6 @@ export const useWalletStore = create<WalletState>((set, get) => ({
           id: '1',
           name: 'Credit Card',
           type: 'card',
-          last4: '4242',
         },
         {
           id: '2',
