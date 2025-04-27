@@ -8,8 +8,6 @@ import {
 import axios from 'axios';
 import { useAuthStore } from '@/store/authStore';
 
-
-
 interface WalletState {
   balance: number;
   transactions: Transaction[];
@@ -32,6 +30,7 @@ interface WalletState {
   transfer: (
     recipientAccount: string,
     amount: number,
+    pin: string,
     description?: string
   ) => Promise<boolean>;
   addFavorite: (name: string, accountNumber: string) => Promise<boolean>;
@@ -162,7 +161,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     }
   },
 
-  topUp: async (amount, paymentMethodName,pin, description) => {
+  topUp: async (amount, paymentMethodName, pin, description) => {
     set({ isLoading: true, error: null });
     try {
       const token = useAuthStore.getState().getAccessToken();
@@ -194,7 +193,6 @@ export const useWalletStore = create<WalletState>((set, get) => ({
           description: description || 'Top Up',
           status: 'completed',
         };
-        
 
         set((state) => ({
           balance: newBalance,
@@ -216,46 +214,58 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     }
   },
 
-  transfer: async (recipientAccount, amount, description) => {
+  transfer: async (recipientAccount, amount, description, pin) => {
     set({ isLoading: true, error: null });
     try {
-      // Simulating API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const token = useAuthStore.getState().getAccessToken();
 
-      // Find recipient
-      const recipient = get().recipients.find(
-        (r) => r.accountNumber === recipientAccount
+      const response = await axios.post(
+        'http://localhost:8080/api/transfer',
+        {
+          toWalletNumber: Number(recipientAccount),
+          amount: amount,
+          notes: description || 'Transfer',
+          pin: pin,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
       );
 
-      // Update balance
-      const newBalance = get().balance - amount;
+      if (response.data.status === 'Success') {
+        const newBalance = get().balance - amount;
 
-      if (newBalance < 0) {
-        set({ error: 'Insufficient balance', isLoading: false });
+        set((state) => ({
+          balance: newBalance,
+          transactions: [
+            {
+              id: Date.now().toString(),
+              type: 'transfer',
+              amount,
+              date: new Date().toISOString().split('T')[0],
+              recipientName: 'Unknown',
+              recipientAccount,
+              description: description || 'Transfer',
+              status: 'completed',
+            },
+            ...state.transactions,
+          ],
+          isLoading: false,
+        }));
+
+        return true;
+      } else {
+        set({ error: response.data.message, isLoading: false });
         return false;
       }
-
-      // Create new transaction
-      const newTransaction: Transaction = {
-        id: Date.now().toString(),
-        type: 'transfer',
-        amount,
-        date: new Date().toISOString().split('T')[0],
-        recipientName: recipient?.name || 'Unknown',
-        recipientAccount,
-        description: description || 'Transfer',
-        status: 'completed',
-      };
-
-      set((state) => ({
-        balance: newBalance,
-        transactions: [newTransaction, ...state.transactions],
+    } catch (error: any) {
+      set({
+        error: error.response?.data?.message || 'Transfer failed',
         isLoading: false,
-      }));
-
-      return true;
-    } catch (error) {
-      set({ error: 'Transfer failed. Please try again.', isLoading: false });
+      });
       return false;
     }
   },

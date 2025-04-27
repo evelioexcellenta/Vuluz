@@ -42,14 +42,15 @@ export function useWallet() {
   };
   
   
-  const handleTransfer = async () => {
+  const handleTransfer = async (pin:string) => {
     if ((!recipientAccount && !selectedRecipient) || !amount) return false;
     
     const amountValue = parseFloat(amount.replace(/[^0-9]/g, ''));
     if (isNaN(amountValue) || amountValue <= 0) return false;
     
     const account = selectedRecipient || recipientAccount;
-    const success = await transfer(account, amountValue, description);
+    const success = await transfer(account, amountValue, description, pin);
+
     if (success) {
       resetForm();
     }

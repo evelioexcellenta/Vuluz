@@ -15,6 +15,7 @@ import { formatCurrency } from '@/utils/formatters';
 import { FavoritesList } from '@/components/transfer/FavoritesList';
 import { Card } from '@/components/ui/Card';
 import { Star } from 'lucide-react-native';
+import { PinInput } from '@/components/ui/PinInput';
 
 export default function TransferScreen() {
   const {
@@ -45,6 +46,12 @@ export default function TransferScreen() {
   const [addFavoriteModalVisible, setAddFavoriteModalVisible] = useState(false);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [pin, setPin] = useState('');
+  const [pinModalVisible, setPinModalVisible] = useState(false);
+  const [successAmount, setSuccessAmount] = useState('');
+const [successRecipient, setSuccessRecipient] = useState('');
+const [successAccount, setSuccessAccount] = useState('');
+
 
   useEffect(() => {
     fetchRecipients();
@@ -59,13 +66,27 @@ export default function TransferScreen() {
     setConfirmModalVisible(true);
   };
 
-  const handleConfirmTransfer = async () => {
-    const success = await handleTransfer();
+  const handleConfirmTransfer = () => {
     setConfirmModalVisible(false);
+    setPinModalVisible(true);
+  };
+
+  const handleSubmitPin = async () => {
+    const account = selectedRecipient || recipientAccount;
+    const recipient = activeTab === 'favorites' ? getSelectedRecipientName() : recipientName;
+  
+    const success = await handleTransfer(pin);
+  
+    setPinModalVisible(false);
+  
     if (success) {
+      setSuccessAmount(amount);
+      setSuccessRecipient(recipient || '');
+      setSuccessAccount(account || '');
       setSuccessModalVisible(true);
     }
   };
+  
 
   const handleDone = () => {
     setSuccessModalVisible(false);
@@ -183,7 +204,6 @@ export default function TransferScreen() {
                 onChangeText={setRecipientName}
                 placeholder="Recipient name will appear here"
                 editable={false}
-                
               />
               <View style={styles.favoriteAction}>
                 <TouchableOpacity style={styles.favoriteButton}>
@@ -321,42 +341,82 @@ export default function TransferScreen() {
 
       {/* Success Modal */}
       <Modal
-        visible={successModalVisible}
-        onClose={handleDone}
-        title="Transfer Successful"
-        primaryButton={{
-          title: 'Done',
-          onPress: handleDone,
+  visible={successModalVisible}
+  onClose={handleDone}
+  title=""
+  primaryButton={{
+    title: 'Done',
+    onPress: handleDone,
+  }}
+>
+  <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+    <View
+      style={{
+        backgroundColor: '#4CAF50',
+        padding: 10,
+        marginBottom: 16,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Text style={{ fontSize: 32, color: 'white' }}>✓</Text>
+    </View>
+    <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 16 }}>
+      Transfer Successful
+    </Text>
+
+    <View style={{ width: '100%', marginBottom: 24 }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          marginBottom: 12,
         }}
       >
-        <View style={styles.modalContent}>
-          <Text style={styles.modalText}>
-            Your transfer was completed successfully.
-          </Text>
+        <Text style={{ fontSize: 16, color: '#666' }}>Amount:</Text>
+        <Text style={{ fontSize: 16, fontWeight: '600' }}>
+          {formatCurrency(Number(successAmount) || 0)}
+        </Text>
+      </View>
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          marginBottom: 12,
+        }}
+      >
+        <Text style={{ fontSize: 16, color: '#666' }}>Recipient:</Text>
+        <Text style={{ fontSize: 16, fontWeight: '600' }}>
+          {successRecipient}
+        </Text>
+      </View>
+      <View
+        style={{ flexDirection: 'row', justifyContent: 'space-between' }}
+      >
+        <Text style={{ fontSize: 16, color: '#666' }}>Account:</Text>
+        <Text style={{ fontSize: 16, fontWeight: '600' }}>
+          {successAccount}
+        </Text>
+      </View>
+    </View>
+  </View>
+</Modal>
 
-          <View style={styles.modalItem}>
-            <Text style={styles.modalLabel}>Amount:</Text>
-            <Text style={styles.modalValue}>
-              {formatCurrency(Number(amount) || 0)}
-            </Text>
-          </View>
 
-          <View style={styles.modalItem}>
-            <Text style={styles.modalLabel}>To:</Text>
-            <Text style={styles.modalValue}>
-              {activeTab === 'favorites'
-                ? getSelectedRecipientName()
-                : recipientName}
-            </Text>
-          </View>
-
-          <View style={styles.modalItem}>
-            <Text style={styles.modalLabel}>Account:</Text>
-            <Text style={styles.modalValue}>
-              {activeTab === 'favorites' ? selectedRecipient : recipientAccount}
-            </Text>
-          </View>
-        </View>
+      <Modal
+        visible={pinModalVisible}
+        onClose={() => setPinModalVisible(false)}
+        title="Enter PIN"
+        primaryButton={{
+          title: 'Confirm',
+          onPress: handleSubmitPin,
+          loading: isLoading,
+        }}
+      >
+        <PinInput pin={pin} setPin={setPin} />
       </Modal>
     </SafeAreaView>
   );

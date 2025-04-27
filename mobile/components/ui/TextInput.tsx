@@ -36,7 +36,7 @@ export function TextInput({
           styles.input,
           multiline && styles.multiline,
           error && styles.inputError,
-          !editable && styles.inputDisabled, // <<< ini, kalau disable
+          !editable && styles.inputDisabled, 
         ]}
         value={value}
         onChangeText={onChangeText}
@@ -46,7 +46,7 @@ export function TextInput({
         multiline={multiline}
         numberOfLines={multiline ? numberOfLines : 1}
         editable={editable}
-        placeholderTextColor={editable ? '#999' : '#bbb'} // placeholder lebih soft kalau disabled
+        placeholderTextColor={editable ? '#999' : '#bbb'} 
       />
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     backgroundColor: '#FFFFFF',
-    color: '#000000', // normal text color
+    color: '#000000', 
   },
   multiline: {
     minHeight: 100,
@@ -81,8 +81,8 @@ const styles = StyleSheet.create({
     borderColor: '#FF6B6B',
   },
   inputDisabled: {
-    backgroundColor: '#F5F5F5', // <<< warna latar belakang kalau disabled
-    color: '#666666',             // <<< warna teks agak gelap
+    backgroundColor: '#F5F5F5', 
+    color: '#666666',             
   },
   errorText: {
     color: '#FF6B6B',
