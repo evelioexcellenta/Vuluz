@@ -18,7 +18,11 @@ interface WalletState {
   error: string | null;
 
   // Actions
-  fetchTransactions: () => Promise<void>;
+  fetchTransactions: (params?: {
+    search?: string;
+    sortOrder?: string;
+    transactionType?: string;
+  }) => Promise<void>;
   fetchRecipients: () => Promise<void>;
   fetchPaymentMethods: () => Promise<void>;
   topUp: (
@@ -50,49 +54,52 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   isLoading: false,
   error: null,
 
-  fetchTransactions: async () => {
+  fetchTransactions: async (params?: {
+    search?: string;
+    sortOrder?: string;
+    transactionType?: string;
+  }) => {
     set({ isLoading: true, error: null });
     try {
-      // Simulating API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const token = useAuthStore.getState().getAccessToken();
 
-      // Mock transactions data
-      const transactions: Transaction[] = [
+      const queryParams = new URLSearchParams();
+      if (params?.search) queryParams.append('search', params.search);
+      if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+      if (params?.transactionType && params.transactionType !== 'all')
+        queryParams.append('transactionType', params.transactionType);
+
+      const response = await axios.get(
+        `http://localhost:8080/api/history?${queryParams.toString()}`,
         {
-          id: '1',
-          type: 'topup',
-          amount: 150000,
-          date: '2024-04-13',
-          senderName: 'Hendra',
-          senderAccount: '114567823',
-          description: 'Monthly Bill',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const backendTransactions = response.data;
+
+      const transactions: Transaction[] = backendTransactions.map(
+        (tx: any) => ({
+          id: tx.id.toString(),
+          type: tx.transactionType,
+          amount: Number(tx.amount),
+          date: new Date(tx.transactionDate).toISOString().split('T')[0],
+          senderName: tx.amount >= 0 ? tx.account : undefined,
+          recipientName: tx.transactionType !== 'Top Up' ? tx.account : undefined,
+          description: tx.description,
           status: 'completed',
-        },
-        {
-          id: '2',
-          type: 'transfer',
-          amount: 47500,
-          date: '2024-04-11',
-          recipientName: 'Salma',
-          recipientAccount: '114516277',
-          description: 'Transfer Out',
-          status: 'completed',
-        },
-        {
-          id: '3',
-          type: 'topup',
-          amount: 500000,
-          date: '2024-04-07',
-          senderName: 'Faadiyah',
-          senderAccount: '114523547',
-          description: 'Transfer In',
-          status: 'completed',
-        },
-      ];
+        })
+      );
 
       set({ transactions, isLoading: false });
-    } catch (error) {
-      set({ error: 'Failed to fetch transactions', isLoading: false });
+    } catch (error: any) {
+      console.error(error);
+      set({
+        error: error.response?.data?.message || 'Failed to fetch transactions',
+        isLoading: false,
+      });
     }
   },
 
@@ -100,28 +107,34 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const token = useAuthStore.getState().getAccessToken();
-      const response = await axios.get('http://localhost:8080/api/getfavorites', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
+      const response = await axios.get(
+        'http://localhost:8080/api/getfavorites',
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       if (response.data.status === 'Success') {
         const favorites = response.data.data;
-  
+
         const recipients: Recipient[] = favorites.map((fav: any) => ({
           id: fav.id.toString(),
           name: fav.ownerName,
           accountNumber: fav.walletNumber.toString(),
           isFavorite: true,
         }));
-  
+
         set({ recipients, isLoading: false });
       } else {
         set({ error: response.data.message, isLoading: false });
       }
     } catch (error: any) {
-      set({ error: error.response?.data?.message || 'Failed to fetch favorites', isLoading: false });
+      set({
+        error: error.response?.data?.message || 'Failed to fetch favorites',
+        isLoading: false,
+      });
     }
   },
 
@@ -182,7 +195,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
         const newTransaction: Transaction = {
           id: Date.now().toString(),
-          type: 'topup', // <--- harus dari pilihan yang valid
+          type: 'Top Up', // <--- harus dari pilihan yang valid
           amount,
           date: new Date().toISOString().split('T')[0],
           description: description || 'Top Up',
@@ -238,7 +251,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
           transactions: [
             {
               id: Date.now().toString(),
-              type: 'transfer',
+              type: 'Transfer Out',
               amount,
               date: new Date().toISOString().split('T')[0],
               recipientName: 'Unknown',
@@ -269,14 +282,18 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const token = useAuthStore.getState().getAccessToken();
-      const response = await axios.post('http://localhost:8080/api/favorite', {
-        walletNumber: Number(accountNumber),
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const response = await axios.post(
+        'http://localhost:8080/api/favorite',
+        {
+          walletNumber: Number(accountNumber),
         },
-      });
-  
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       if (response.data.status === 'Success') {
         const newRecipient: Recipient = {
           id: Date.now().toString(), // Temp id
@@ -284,12 +301,12 @@ export const useWalletStore = create<WalletState>((set, get) => ({
           accountNumber,
           isFavorite: true,
         };
-  
+
         set((state) => ({
           recipients: [...state.recipients, newRecipient],
           isLoading: false,
         }));
-  
+
         return true;
       } else {
         set({ error: response.data.message, isLoading: false });
@@ -308,22 +325,22 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const token = useAuthStore.getState().getAccessToken();
-      
+
       const favorite = get().recipients.find((fav) => fav.id === id);
       if (!favorite) throw new Error('Favorite not found');
-  
+
       await axios.delete(`http://localhost:8080/api/favorite/delete`, {
         params: { walletNumber: favorite.accountNumber },
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-  
+
       set((state) => ({
         recipients: state.recipients.filter((recipient) => recipient.id !== id),
         isLoading: false,
       }));
-  
+
       return true;
     } catch (error: any) {
       set({

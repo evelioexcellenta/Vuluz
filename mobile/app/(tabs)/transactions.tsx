@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, TextInput } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useWalletStore } from '@/store/walletStore';
 import { Card } from '@/components/ui/Card';
@@ -9,24 +16,32 @@ import { Search, Filter, ArrowDown, ArrowUp } from 'lucide-react-native';
 
 export default function TransactionsScreen() {
   const { transactions, fetchTransactions } = useWalletStore();
-  
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<
+    Transaction[]
+  >([]);
   const [filterVisible, setFilterVisible] = useState(false);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [filterType, setFilterType] = useState<'all' | 'topup' | 'transfer'>('all');
-  
+  const [filterType, setFilterType] = useState<
+    'All' | 'Top Up' | 'Transfer In' | 'Transfer Out'
+  >('All');
+
   useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
-  
+    fetchTransactions({
+      search: searchQuery,
+      sortOrder: sortOrder === 'desc' ? 'date_desc' : 'date_asc',
+      transactionType: filterType === 'All' ? undefined : filterType,
+    });
+  }, [searchQuery, sortOrder, filterType]);
+
   useEffect(() => {
     filterTransactions();
   }, [searchQuery, transactions, sortOrder, filterType]);
-  
+
   const filterTransactions = () => {
     let filtered = [...transactions];
-    
+
     // Apply search
     if (searchQuery) {
       filtered = filtered.filter(
@@ -37,42 +52,44 @@ export default function TransactionsScreen() {
           t.amount.toString().includes(searchQuery)
       );
     }
-    
+
     // Apply type filter
-    if (filterType !== 'all') {
+    if (filterType !== 'All') {
       filtered = filtered.filter((t) => t.type === filterType);
     }
-    
+
     // Apply sort
     filtered.sort((a, b) => {
       const dateA = new Date(a.date).getTime();
       const dateB = new Date(b.date).getTime();
       return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
-    
+
     setFilteredTransactions(filtered);
   };
-  
+
   const toggleSortOrder = () => {
     setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
   };
-  
+
   const resetFilters = () => {
-    setFilterType('all');
+    setFilterType('All');
     setSortOrder('desc');
     setSearchQuery('');
   };
-  
+
   const renderItem = ({ item }: { item: Transaction }) => {
-    const isIncoming = item.type === 'topup';
-    
+    // const isIncoming = item.type === 'topup';
+
     return (
       <Card style={styles.transactionItem}>
         <View style={styles.transactionHeader}>
           <View style={styles.transactionTitleContainer}>
             <Text style={styles.transactionTitle}>
-              {isIncoming
-                ? `Payment from ${item.senderName}`
+              {item.type === 'Top Up'
+                ? `Top Up from ${item.senderName}`
+                : item.type === 'Transfer In'
+                ? `Received from ${item.senderName}`
                 : `Payment to ${item.recipientName}`}
             </Text>
             <Text style={styles.transactionDate}>{formatDate(item.date)}</Text>
@@ -80,43 +97,48 @@ export default function TransactionsScreen() {
           <View
             style={[
               styles.transactionStatus,
-              isIncoming ? styles.incomingStatus : styles.outgoingStatus,
+              item.amount > 0 ? styles.incomingStatus : styles.outgoingStatus,
             ]}
           >
             <Text
               style={[
                 styles.transactionStatusText,
-                isIncoming ? styles.incomingStatusText : styles.outgoingStatusText,
+                item.amount > 0
+                  ? styles.incomingStatusText
+                  : styles.outgoingStatusText,
               ]}
             >
-              {isIncoming ? 'Income' : 'Expense'}
+              {item.type}
             </Text>
           </View>
         </View>
-        
+
         <View style={styles.transactionDetails}>
           <View>
             <Text style={styles.transactionLabel}>
-              {isIncoming ? 'From' : 'To'}:
+              {item.type === 'Transfer Out' ? 'To' : 'From'}:
             </Text>
             <Text style={styles.transactionValue}>
-              {isIncoming ? item.senderName : item.recipientName}
+              {item.type === 'Transfer Out'
+                ? item.recipientName
+                : item.senderName}
             </Text>
           </View>
-          
+
           <View>
             <Text style={styles.amountLabel}>Amount</Text>
             <Text
               style={[
                 styles.amountValue,
-                isIncoming ? styles.incomingAmount : styles.outgoingAmount,
+                item.amount > 0 ? styles.incomingAmount : styles.outgoingAmount,
               ]}
             >
-              {isIncoming ? '+' : '-'}{formatCurrency(item.amount)}
+              {item.amount > 0 ? '+' : '-'}
+              {formatCurrency(Math.abs(item.amount))}
             </Text>
           </View>
         </View>
-        
+
         {item.description && (
           <View style={styles.descriptionContainer}>
             <Text style={styles.descriptionLabel}>Description:</Text>
@@ -126,18 +148,18 @@ export default function TransactionsScreen() {
       </Card>
     );
   };
-  
+
   const ListEmptyComponent = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyText}>No transactions found</Text>
     </View>
   );
-  
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Transaction History</Text>
-        
+
         <View style={styles.searchContainer}>
           <Search size={20} color="#666" style={styles.searchIcon} />
           <TextInput
@@ -147,7 +169,7 @@ export default function TransactionsScreen() {
             onChangeText={setSearchQuery}
           />
         </View>
-        
+
         <View style={styles.filterContainer}>
           <TouchableOpacity
             style={styles.filterButton}
@@ -156,7 +178,7 @@ export default function TransactionsScreen() {
             <Filter size={20} color="#666" />
             <Text style={styles.filterButtonText}>Filter</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={styles.sortButton} onPress={toggleSortOrder}>
             {sortOrder === 'desc' ? (
               <ArrowDown size={20} color="#666" />
@@ -168,7 +190,7 @@ export default function TransactionsScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-        
+
         {filterVisible && (
           <View style={styles.filterOptions}>
             <Text style={styles.filterTitle}>Filter by type:</Text>
@@ -176,63 +198,80 @@ export default function TransactionsScreen() {
               <TouchableOpacity
                 style={[
                   styles.typeButton,
-                  filterType === 'all' && styles.activeTypeButton,
+                  filterType === 'All' && styles.activeTypeButton,
                 ]}
-                onPress={() => setFilterType('all')}
+                onPress={() => setFilterType('All')}
               >
                 <Text
                   style={[
                     styles.typeButtonText,
-                    filterType === 'all' && styles.activeTypeButtonText,
+                    filterType === 'All' && styles.activeTypeButtonText,
                   ]}
                 >
                   All
                 </Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[
                   styles.typeButton,
-                  filterType === 'topup' && styles.activeTypeButton,
+                  filterType === 'Top Up' && styles.activeTypeButton,
                 ]}
-                onPress={() => setFilterType('topup')}
+                onPress={() => setFilterType('Top Up')}
               >
                 <Text
                   style={[
                     styles.typeButtonText,
-                    filterType === 'topup' && styles.activeTypeButtonText,
+                    filterType === 'Top Up' && styles.activeTypeButtonText,
                   ]}
                 >
-                  Income
+                  Top Up
                 </Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[
                   styles.typeButton,
-                  filterType === 'transfer' && styles.activeTypeButton,
+                  filterType === 'Transfer In' && styles.activeTypeButton,
                 ]}
-                onPress={() => setFilterType('transfer')}
+                onPress={() => setFilterType('Transfer In')}
               >
                 <Text
                   style={[
                     styles.typeButtonText,
-                    filterType === 'transfer' && styles.activeTypeButtonText,
+                    filterType === 'Transfer In' && styles.activeTypeButtonText,
                   ]}
                 >
-                  Expense
+                  Transfer In
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.typeButton,
+                  filterType === 'Transfer Out' && styles.activeTypeButton,
+                ]}
+                onPress={() => setFilterType('Transfer Out')}
+              >
+                <Text
+                  style={[
+                    styles.typeButtonText,
+                    filterType === 'Transfer Out' &&
+                      styles.activeTypeButtonText,
+                  ]}
+                >
+                  Transfer Out
                 </Text>
               </TouchableOpacity>
             </View>
-            
-            <TouchableOpacity
-              style={styles.resetButton}
-              onPress={resetFilters}
-            >
+
+            <TouchableOpacity style={styles.resetButton} onPress={resetFilters}>
               <Text style={styles.resetButtonText}>Reset Filters</Text>
             </TouchableOpacity>
           </View>
         )}
       </View>
-      
+
       <FlatList
         data={filteredTransactions}
         renderItem={renderItem}
@@ -310,7 +349,9 @@ const styles = StyleSheet.create({
   },
   filterButtons: {
     flexDirection: 'row',
-    marginBottom: 16,
+    flexWrap: 'wrap', 
+    justifyContent: 'flex-start',
+    gap: 8, 
   },
   typeButton: {
     paddingVertical: 8,
@@ -320,6 +361,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    
   },
   activeTypeButton: {
     backgroundColor: '#7C5DF9',

@@ -10,7 +10,7 @@ export interface User {
 
 export interface Transaction {
   id: string;
-  type: 'topup' | 'transfer' | 'payment';
+  type: 'Top Up' | 'Transfer In' | 'Transfer Out';
   amount: number;
   description?: string;
   date: string;

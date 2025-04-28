@@ -173,14 +173,13 @@ export default function TransferScreen() {
 
                 {selectedRecipient && (
                   <Card style={styles.selectedRecipientCard}>
-  <Text style={styles.selectedRecipientName}>
-    {getSelectedRecipientName()}
-  </Text>
-  <Text style={styles.selectedRecipientAccount}>
-    {selectedRecipient}
-  </Text>
-</Card>
-
+                    <Text style={styles.selectedRecipientName}>
+                      {getSelectedRecipientName()}
+                    </Text>
+                    <Text style={styles.selectedRecipientAccount}>
+                      {selectedRecipient}
+                    </Text>
+                  </Card>
                 )}
               </View>
             </View>
@@ -211,14 +210,14 @@ export default function TransferScreen() {
                 placeholder="Recipient name will appear here"
                 editable={false}
               />
-              <View style={styles.favoriteAction}>
+              {/* <View style={styles.favoriteAction}>
                 <TouchableOpacity style={styles.favoriteButton}>
                   <Star size={16} color="#7C5DF9" />
                   <Text style={styles.favoriteButtonText}>
                     Add to Favorites
                   </Text>
                 </TouchableOpacity>
-              </View>
+              </View> */}
             </View>
           )}
 
@@ -500,13 +499,13 @@ const styles = StyleSheet.create({
     borderColor: '#E0E0E0',
     backgroundColor: '#FAFAFA',
   },
-  
+
   selectedRecipientName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
   },
-  
+
   selectedRecipientAccount: {
     fontSize: 14,
     color: '#666',
