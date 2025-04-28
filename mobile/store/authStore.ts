@@ -46,6 +46,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           user: {
             id: '',
             name: '',
+            username:'',
             email: email,
             accountNumber: '',
             balance: 0,
@@ -73,6 +74,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const response = await axios.post('http://localhost:8080/api/auth/register', {
         fullName: name,
         email: email,
+        username: username,
         password: password,
         userName: username,
         gender: gender,
@@ -96,11 +98,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user: null, isAuthenticated: false, accessToken: null });
   },
 
-  updateUser: (userData) => {
-    set((state) => ({
-      user: state.user ? { ...state.user, ...userData } : null,
-    }));
+  updateUser: async (userData) => {
+    try {
+      const token = get().accessToken;
+      if (!token) throw new Error('No access token');
+  
+      const response = await axios.put(
+        'http://localhost:8080/api/profile',
+        {
+          fullName: userData.name,
+          userName: userData.username,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+  
+      if (response.data.status === 'OK') {
+        set((state) => ({
+          user: state.user ? { ...state.user, ...userData } : null,
+        }));
+      } else {
+        throw new Error(response.data.message || 'Failed to update profile');
+      }
+    } catch (error: any) {
+      console.error(error);
+      throw new Error(error.message || 'Failed to update profile');
+    }
   },
+  
 
   getAccessToken: () => {
     return get().accessToken;

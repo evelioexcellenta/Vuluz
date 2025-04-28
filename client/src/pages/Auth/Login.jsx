@@ -47,24 +47,7 @@ const Login = () => {
       setError(err.message || 'Login failed. Please try again.');
     }
   };
-  
-  // Demo login credentials
-  const demoLogin = async () => {
-    try {
-      setError('');
-      const success = await login({
-        email: 'demo@example.com',
-        password: 'demo1234'
-      });
-      
-      if (success) {
-        navigate(ROUTES.DASHBOARD);
-      }
-    } catch (err) {
-      setError(err.message || 'Demo login failed. Please try again.');
-    }
-  };
-  
+    
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -144,21 +127,6 @@ const Login = () => {
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-300"></div>
                 </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or continue with</span>
-                </div>
-              </div>
-              
-              <div className="mt-6">
-                <Button
-                  type="button"
-                  variant="outline"
-                  fullWidth
-                  onClick={demoLogin}
-                  isLoading={isLoading}
-                >
-                  Demo Account
-                </Button>
               </div>
             </div>
           </Card.Body>

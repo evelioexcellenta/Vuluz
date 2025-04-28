@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
 import { User, ChevronRight, LogOut, Camera, Settings, Bell, Shield, CircleHelp as HelpCircle } from 'lucide-react-native';
+import Toast from 'react-native-toast-message';
 
 export default function ProfileScreen() {
   const { user, updateUser } = useAuthStore();
@@ -15,23 +16,37 @@ export default function ProfileScreen() {
   
   const [editMode, setEditMode] = useState(false);
   const [name, setName] = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || '');
+  const [username, setUsername] = useState(user?.username || '');
+
   const [confirmLogoutVisible, setConfirmLogoutVisible] = useState(false);
   
-  const handleSaveProfile = () => {
-    updateUser({
-      name,
-      email,
-      phoneNumber,
-    });
-    setEditMode(false);
+  const handleSaveProfile = async () => {
+    try {
+      await updateUser({
+        name,
+        username,
+      });
+      setEditMode(false);
+  
+      Toast.show({
+        type: 'success',
+        text1: 'Profile updated!',
+        position: 'top',
+      });
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to update profile',
+        text2: error.message || 'Something went wrong',
+        position: 'top',
+      });
+    }
   };
+  
   
   const handleCancel = () => {
     setName(user?.name || '');
-    setEmail(user?.email || '');
-    setPhoneNumber(user?.phoneNumber || '');
+    setUsername(user?.username || '');
     setEditMode(false);
   };
   
@@ -45,20 +60,13 @@ export default function ProfileScreen() {
       />
       
       <TextInput
-        label="Email"
-        value={email}
-        onChangeText={setEmail}
+        label="Username"
+        value={username}
+        onChangeText={setUsername}
         placeholder="Enter your email"
         keyboardType="email-address"
       />
       
-      <TextInput
-        label="Phone Number"
-        value={phoneNumber}
-        onChangeText={setPhoneNumber}
-        placeholder="Enter your phone number"
-        keyboardType="phone-pad"
-      />
       
       <View style={styles.editActions}>
         <Button
