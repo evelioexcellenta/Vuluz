@@ -12,8 +12,8 @@ interface RecentTransactionsProps {
 
 export function RecentTransactions({ transactions, onSeeAll }: RecentTransactionsProps) {
   const renderItem = ({ item }: { item: Transaction }) => {
-    const isIncoming = item.type === 'topup';
-    
+    const isIncoming = item.type === 'Top Up' || item.type === 'Transfer In';
+  
     return (
       <View style={styles.transactionItem}>
         <View style={[styles.iconContainer, isIncoming ? styles.incomingIcon : styles.outgoingIcon]}>
@@ -32,12 +32,12 @@ export function RecentTransactions({ transactions, onSeeAll }: RecentTransaction
             <Text style={styles.transactionDate}>{formatDate(item.date)}</Text>
             <View style={[styles.badge, isIncoming ? styles.incomingBadge : styles.outgoingBadge]}>
               <Text style={[styles.badgeText, isIncoming ? styles.incomingBadgeText : styles.outgoingBadgeText]}>
-                {item.description}
+                {item.type}
               </Text>
             </View>
           </View>
         </View>
-        
+  
         <Text style={[styles.amount, isIncoming ? styles.incomingAmount : styles.outgoingAmount]}>
           {isIncoming ? '+' : '-'}{formatCurrency(item.amount)}
         </Text>
@@ -45,8 +45,9 @@ export function RecentTransactions({ transactions, onSeeAll }: RecentTransaction
     );
   };
   
+  
   return (
-    <Card style={styles.container}>
+    <Card style={StyleSheet.flatten([styles.container, styles.shadowProp])}>
       <View style={styles.header}>
         <Text style={styles.title}>Recent Transactions</Text>
         {onSeeAll && (
@@ -160,5 +161,11 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: '#F0F0F0',
+  },
+  shadowProp: {
+    shadowColor: '#171717',
+    shadowOffset: {width: -2, height: 4},
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
 });

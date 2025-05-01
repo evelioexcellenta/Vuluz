@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/authStore';
 
 interface WalletState {
   balance: number;
+  walletNumber: string;
   transactions: Transaction[];
   recipients: Recipient[];
   paymentMethods: PaymentMethod[];
@@ -25,6 +26,7 @@ interface WalletState {
   }) => Promise<void>;
   fetchRecipients: () => Promise<void>;
   fetchPaymentMethods: () => Promise<void>;
+  fetchBalance: () => Promise<void>;
   topUp: (
     amount: number,
     paymentMethodName: string,
@@ -39,20 +41,58 @@ interface WalletState {
   ) => Promise<boolean>;
   addFavorite: (name: string, accountNumber: string) => Promise<boolean>;
   removeFavorite: (id: string) => Promise<boolean>;
+  fetchTransactionSummary: () => Promise<void>;
+
 }
 
 export const useWalletStore = create<WalletState>((set, get) => ({
   balance: 15782259,
+  walletNumber: '',
   transactions: [],
   recipients: [],
   paymentMethods: [],
   transactionSummary: {
-    topup: 10500000,
-    transfer: 5750000,
-    expense: 1150000,
+    topup: 0,
+    transfer: 0,
+    netSaving: 0,
   },
   isLoading: false,
   error: null,
+
+  fetchTransactionSummary: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const token = useAuthStore.getState().getAccessToken();
+  
+      const response = await axios.get('http://localhost:8080/api/summary', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      const data = response.data;
+  
+      // Map hasil backend ke struktur TransactionSummary di frontend
+      set({
+        transactionSummary: {
+          topup: Number(data.totalIncome) || 0,
+          transfer: Number(data.totalExpense) || 0,
+          netSaving: Number(data.netIncome) || 0,
+        },
+        
+        isLoading: false,
+      });
+
+    } catch (error: any) {
+      console.error(error);
+      set({
+        error: error.response?.data?.message || 'Failed to fetch transaction summary',
+        isLoading: false,
+      });
+    }
+  },
+  
+  
 
   fetchTransactions: async (params?: {
     search?: string;
@@ -87,7 +127,8 @@ export const useWalletStore = create<WalletState>((set, get) => ({
           amount: Number(tx.amount),
           date: new Date(tx.transactionDate).toISOString().split('T')[0],
           senderName: tx.amount >= 0 ? tx.account : undefined,
-          recipientName: tx.transactionType !== 'Top Up' ? tx.account : undefined,
+          recipientName:
+            tx.transactionType !== 'Top Up' ? tx.account : undefined,
           description: tx.description,
           status: 'completed',
         })
@@ -277,6 +318,33 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       return false;
     }
   },
+
+  fetchBalance: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const token = useAuthStore.getState().getAccessToken();
+      const response = await axios.get('http://localhost:8080/api/balance', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      const data = response.data;
+  
+      set({
+        balance: Number(data.balance) || 0,
+        walletNumber: data.walletNumber?.toString() || '',
+        isLoading: false,
+      });
+    } catch (error: any) {
+      console.error(error);
+      set({
+        error: error.response?.data?.message || 'Failed to fetch balance',
+        isLoading: false,
+      });
+    }
+  },
+  
 
   addFavorite: async (name, accountNumber) => {
     set({ isLoading: true, error: null });

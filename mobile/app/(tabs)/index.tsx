@@ -1,5 +1,11 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/store/authStore';
 import { useWalletStore } from '@/store/walletStore';
@@ -7,45 +13,69 @@ import { Balance } from '@/components/dashboard/Balance';
 import { TransactionSummary } from '@/components/dashboard/TransactionSummary';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
 import { router } from 'expo-router';
+import { PieChartWithFilter } from '@/components/dashboard/TransactionPieChart';
+import { useWallet } from '@/hooks/useWallet';
+// import { TransactionPieChart } from '@/components/dashboard/TransactionPieChart';
 
 export default function DashboardScreen() {
   const { user } = useAuthStore();
-  const { balance, transactions, transactionSummary, fetchTransactions } = useWalletStore();
-  
+  const {
+    balance,
+    walletNumber,
+    transactions,
+    transactionSummary,
+    fetchTransactions,
+    fetchBalance,
+    fetchTransactionSummary
+  } = useWalletStore();
+
+  const [isVisible, setIsVisible] = useState(true);
   useEffect(() => {
     fetchTransactions();
-  }, [fetchTransactions]);
-  
+    fetchBalance();
+    fetchTransactionSummary();
+  }, [fetchTransactions, fetchBalance,fetchTransactionSummary]);
+
   const handleCopyAccountNumber = () => {
     // In a real app, this would copy to clipboard
   };
-  
+  const previousBalance = balance - transactionSummary.netSaving;
+
   const navigateToTransactions = () => {
     router.push('/(tabs)/transactions');
   };
-  
+
   if (!user) return null;
-  
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.header}>
           <Text style={styles.greeting}>Welcome back, {user.name}!</Text>
           <Text style={styles.subtitle}>Here's your financial overview</Text>
         </View>
-        
+
         <Balance
-          accountNumber={user.accountNumber}
+          accountNumber={walletNumber}
           balance={balance}
+          previousBalance={previousBalance}
+          isBalanceVisible={isVisible}
+          onToggleVisibility={() => setIsVisible(!isVisible)}
           onCopy={handleCopyAccountNumber}
+          onTransfer={() => router.push('/(tabs)/transfer')}
+          onTopUp={() => router.push('/(tabs)/top-up')}
         />
-        
+
         <TransactionSummary
           topup={transactionSummary.topup}
           transfer={transactionSummary.transfer}
-          expense={transactionSummary.expense}
+          netSaving={transactionSummary.netSaving}
         />
-        
+        {/* <PieChartWithFilter /> */}
+
         <RecentTransactions
           transactions={transactions}
           onSeeAll={navigateToTransactions}
@@ -58,7 +88,7 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAFBFD',
   },
   scrollView: {
     flex: 1,
@@ -78,4 +108,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
+  
 });

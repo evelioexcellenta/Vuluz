@@ -347,6 +347,7 @@ const styles = StyleSheet.create({
   },
   editForm: {
     marginTop: 16,
+    backgroundColor:'#FAFBFD'
   },
   editActions: {
     flexDirection: 'row',

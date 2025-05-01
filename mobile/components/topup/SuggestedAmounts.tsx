@@ -18,7 +18,7 @@ export function SuggestedAmounts({ amounts, onSelectAmount }: SuggestedAmountsPr
             style={styles.amountButton}
             onPress={() => onSelectAmount(amount)}
           >
-            <Text style={styles.amountText}>{formatCurrency(amount).replace('.00', '')}</Text>
+            <Text style={styles.amountText}>{formatCurrency(amount)}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -53,5 +53,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#333',
+  },
+  shadowProp: {
+    shadowColor: '#171717',
+    shadowOffset: {width: -2, height: 4},
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
   },
 });

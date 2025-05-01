@@ -1,25 +1,26 @@
 import { create } from 'zustand';
-import { User } from '@/types';
 import axios from 'axios';
+import { User } from '@/types';
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  accessToken: string | null;
+
   login: (email: string, password: string) => Promise<void>;
   register: (
     name: string,
     email: string,
     password: string,
-    gender: String,
-    username: String,
-    pin: String
+    gender: string,
+    username: string,
+    pin: string
   ) => Promise<void>;
   logout: () => void;
-  updateUser: (userData: Partial<User>) => void;
-  accessToken: string | null;
-getAccessToken: () => string | null;
+  updateUser: (userData: Partial<User>) => Promise<void>;
+  getAccessToken: () => string | null;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -31,38 +32,45 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   login: async (email, password) => {
     set({ isLoading: true, error: null });
+
     try {
-      const response = await axios.post('http://localhost:8080/api/auth/login', {
-        email: email,
-        password: password,
+      const loginRes = await axios.post('http://localhost:8080/api/auth/login', {
+        email,
+        password,
       });
 
-      if (response.data.status === 'OK') {
-        const token = response.data.token;
-
-        set({
-          isAuthenticated: true,
-          accessToken: token, // <-- simpan token di state
-          user: {
-            id: '',
-            name: '',
-            username:'',
-            email: email,
-            accountNumber: '',
-            balance: 0,
-            phoneNumber: '',
-          },
-          isLoading: false,
-        });
-
-        console.log('Login Success, token:', token);
-      } else {
-        set({ error: response.data.message || 'Login failed', isLoading: false });
+      if (loginRes.data.status !== 'OK') {
+        throw new Error(loginRes.data.message || 'Login failed');
       }
-    } catch (error: any) {
-      console.error(error.response?.data || error.message);
+
+      const token = loginRes.data.token;
+      set({ accessToken: token });
+
+      // Fetch user profile
+      const profileRes = await axios.get('http://localhost:8080/api/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const p = profileRes.data;
+
       set({
-        error: error.response?.data?.message || 'Login failed',
+        user: {
+          id: '', // Kalau backend tidak kirim id, kosongkan
+          name: p.fullName || '',
+          username: p.userName || '',
+          email: p.email || '',
+          accountNumber: p.walletNumber?.toString() || '',
+          balance: Number(p.walletBalance) || 0,
+          phoneNumber: '', // Jika tidak tersedia
+        },
+        isAuthenticated: true,
+        isLoading: false,
+      });
+
+    } catch (error: any) {
+      console.error(error);
+      set({
+        error: error.response?.data?.message || error.message || 'Login failed',
         isLoading: false,
       });
     }
@@ -70,65 +78,67 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   register: async (name, email, password, gender, username, pin) => {
     set({ isLoading: true, error: null });
+
     try {
-      const response = await axios.post('http://localhost:8080/api/auth/register', {
+      const res = await axios.post('http://localhost:8080/api/auth/register', {
         fullName: name,
-        email: email,
-        username: username,
-        password: password,
+        email,
+        username,
         userName: username,
-        gender: gender,
-        pin: pin,
+        password,
+        gender,
+        pin,
       });
 
-      if (response.data.status === 'OK') {
-        set({ isAuthenticated: true, isLoading: false });
-      } else {
-        set({ error: response.data.message, isLoading: false });
+      if (res.data.status !== 'OK') {
+        throw new Error(res.data.message || 'Registration failed');
       }
+
+      set({ isAuthenticated: false, isLoading: false }); // tetap false, lanjut ke login
     } catch (error: any) {
       set({
-        error: error.response?.data?.message || 'Registration failed',
+        error: error.response?.data?.message || error.message || 'Registration failed',
         isLoading: false,
       });
     }
   },
 
   logout: () => {
-    set({ user: null, isAuthenticated: false, accessToken: null });
+    set({
+      user: null,
+      isAuthenticated: false,
+      accessToken: null,
+    });
   },
 
   updateUser: async (userData) => {
     try {
       const token = get().accessToken;
       if (!token) throw new Error('No access token');
-  
-      const response = await axios.put(
+
+      const res = await axios.put(
         'http://localhost:8080/api/profile',
         {
           fullName: userData.name,
           userName: userData.username,
         },
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
-  
-      if (response.data.status === 'OK') {
-        set((state) => ({
-          user: state.user ? { ...state.user, ...userData } : null,
-        }));
-      } else {
-        throw new Error(response.data.message || 'Failed to update profile');
+
+      if (res.data.status !== 'OK') {
+        throw new Error(res.data.message || 'Failed to update profile');
       }
+
+      set((state) => ({
+        user: state.user ? { ...state.user, ...userData } : null,
+      }));
     } catch (error: any) {
       console.error(error);
       throw new Error(error.message || 'Failed to update profile');
     }
   },
-  
 
   getAccessToken: () => {
     return get().accessToken;
