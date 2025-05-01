@@ -100,7 +100,6 @@ export default function RegisterScreen() {
       }
     }
   };
-  
 
   return (
     <KeyboardAvoidingView

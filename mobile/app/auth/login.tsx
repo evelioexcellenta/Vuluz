@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { validateEmail, validatePassword } from '@/utils/validators';
 import { router } from 'expo-router';
@@ -8,36 +17,45 @@ import { Button } from '@/components/ui/Button';
 import { StatusBar } from 'expo-status-bar';
 
 export default function LoginScreen() {
-  const { loginEmail, setLoginEmail, loginPassword, setLoginPassword, handleLogin, isLoading, error } = useAuth();
+  const {
+    loginEmail,
+    setLoginEmail,
+    loginPassword,
+    setLoginPassword,
+    handleLogin,
+    isLoading,
+    error,
+  } = useAuth();
+
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
-  
+
   const validateForm = () => {
     let isValid = true;
-    
+
     if (!validateEmail(loginEmail)) {
       setEmailError('Please enter a valid email address');
       isValid = false;
     } else {
       setEmailError(null);
     }
-    
+
     if (!validatePassword(loginPassword)) {
       setPasswordError('Password must be at least 6 characters');
       isValid = false;
     } else {
       setPasswordError(null);
     }
-    
+
     return isValid;
   };
-  
+
   const onSubmit = async () => {
     if (validateForm()) {
       await handleLogin();
     }
   };
-  
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -46,47 +64,56 @@ export default function LoginScreen() {
     >
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Welcome Back!</Text>
-          <Text style={styles.subtitle}>Sign in to continue to your account</Text>
+        {/* Illustration */}
+        <Image
+          source={require('@/assets/images/vuluz.png')} // ganti dengan path sesuai image kamu
+          style={styles.illustration}
+          resizeMode="contain"
+        />
+
+        {/* Logo + Branding */}
+        <View style={styles.brandContainer}>
+          {/* <Text style={styles.logoIcon}>V</Text> */}
+          <Image
+          source={require('@/assets/images/V.png')} // ganti dengan path sesuai image kamu
+          style={styles.logoIcon}
+          resizeMode="contain"
+        />
+          <Text style={styles.logoText}>Vuluz</Text>
         </View>
-        
+
+        {/* Form */}
         <View style={styles.form}>
           {error && <Text style={styles.errorText}>{error}</Text>}
-          
+
           <TextInput
-            label="Email"
+            label=""
             value={loginEmail}
             onChangeText={setLoginEmail}
-            placeholder="Enter your email"
+            placeholder="Email"
             keyboardType="email-address"
             error={emailError ?? undefined}
           />
-          
+
           <TextInput
-            label="Password"
+            label=""
             value={loginPassword}
             onChangeText={setLoginPassword}
-            placeholder="Enter your password"
+            placeholder="Password"
             secureTextEntry
             error={passwordError ?? undefined}
           />
-          
+
           <TouchableOpacity style={styles.forgotPassword}>
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            <Text style={styles.forgotPasswordText}>Forgot password?</Text>
           </TouchableOpacity>
-          
-          <Button
-            title="Sign In"
-            onPress={onSubmit}
-            loading={isLoading}
-            style={styles.button}
-          />
-          
+
+          <Button title="Sign In" onPress={onSubmit} loading={isLoading} />
+
           <View style={styles.registerContainer}>
             <Text style={styles.registerText}>Don't have an account? </Text>
             <TouchableOpacity onPress={() => router.push('/auth/register')}>
-              <Text style={styles.registerLink}>Sign Up</Text>
+              <Text style={styles.registerLink}>Sign up</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -98,39 +125,47 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8F9FC',
   },
   scrollContainer: {
     flexGrow: 1,
     padding: 24,
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  header: {
+  illustration: {
+    width: 300,
+    height: 200,
     marginBottom: 32,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 8,
-    color: '#333',
+  brandContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 32,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
+  logoIcon: {
+    fontSize: 36,
+    color: '#7C5DF9',
+    fontWeight: 'bold',
+    marginRight: 8,
+    width: 30,
+    height: 40,
+  },
+  logoText: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#000000',
   },
   form: {
     width: '100%',
   },
   forgotPassword: {
     alignSelf: 'flex-end',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   forgotPasswordText: {
     fontSize: 14,
     color: '#7C5DF9',
-  },
-  button: {
-    marginBottom: 16,
   },
   registerContainer: {
     flexDirection: 'row',
