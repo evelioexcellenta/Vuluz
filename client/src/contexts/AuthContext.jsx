@@ -1,58 +1,119 @@
-import { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
-import { authAPI, mockAPI } from "../utils/api";
+import { useNavigate } from "react-router-dom";
+import { authAPI } from "../utils/api";
 
-// Create the auth context
+// minimal JWT decoder (no external deps)
+function decodeToken(token) {
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
+  const navigate = useNavigate();
+
+  const [token, setToken] = useState(localStorage.getItem("token"));
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Check for existing auth on mount
+  const logout = useCallback(() => {
+    localStorage.removeItem("token");
+    setToken(null);
+    setUser(null);
+    setIsAuthenticated(false);
+    navigate("/login", { replace: true });
+  }, [navigate]);
+
+  // 1) On mount: verify existing token & fetch profile
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem("token");
-
-      if (token) {
+      const stored = localStorage.getItem("token");
+      if (stored) {
         try {
-          const data = await authAPI.getProfile();
-          setUser(data); // dari backend
+          const profile = await authAPI.getProfile();
+          setUser(profile);
           setIsAuthenticated(true);
-        } catch (err) {
-          console.error("Auth verification failed", err);
-          // Clear invalid token
+          setToken(stored);
+        } catch {
           localStorage.removeItem("token");
           setError("Your session has expired. Please login again.");
         }
       }
-
       setIsLoading(false);
     };
-
     checkAuth();
   }, []);
 
-  // Login function
+  // 2) Auto-logout when JWT expires
+  useEffect(() => {
+    if (!token) return;
+    const decoded = decodeToken(token);
+    if (!decoded || !decoded.exp) {
+      logout();
+      return;
+    }
+    const msLeft = decoded.exp * 1000 - Date.now();
+    if (msLeft <= 0) {
+      logout();
+      return;
+    }
+    const timeoutId = setTimeout(logout, msLeft);
+    return () => clearTimeout(timeoutId);
+  }, [token, logout]);
+
+  // 3) Idle timeout: 15 minutes of inactivity
+  useEffect(() => {
+    if (!token) return;
+    const idleLimit = 15 * 60 * 1000;
+    let idleTimer;
+    const resetIdle = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(logout, idleLimit);
+    };
+    ["mousemove", "keydown", "click", "touchstart"].forEach((evt) =>
+      window.addEventListener(evt, resetIdle)
+    );
+    resetIdle();
+    return () => {
+      clearTimeout(idleTimer);
+      ["mousemove", "keydown", "click", "touchstart"].forEach((evt) =>
+        window.removeEventListener(evt, resetIdle)
+      );
+    };
+  }, [token, logout]);
+
+  // 4) Login
   const login = async (credentials) => {
     setIsLoading(true);
     setError(null);
-
     try {
       const data = await authAPI.login(credentials);
-
       if (data.status === "OK") {
         localStorage.setItem("token", data.token);
+        setToken(data.token);
+
         const profile = await authAPI.getProfile();
         setUser(profile);
         setIsAuthenticated(true);
-        // setUser({ email: credentials.email });
+        navigate("/dashboard", { replace: true });
         return true;
-      } else {
-        throw new Error(data.message || "Login failed.");
       }
+      throw new Error(data.message || "Login failed");
     } catch (err) {
       setError(err.message);
       return false;
@@ -61,11 +122,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Register function
+  // 5) Register
   const register = async (userData) => {
     setIsLoading(true);
     setError(null);
-
     try {
       const data = await authAPI.register({
         fullName: userData.name,
@@ -75,12 +135,10 @@ export const AuthProvider = ({ children }) => {
         password: userData.password,
         pin: userData.pin,
       });
-
       if (data.status === "success" || data.status === "OK") {
         return true;
-      } else {
-        throw new Error(data.message || "Registration failed.");
       }
+      throw new Error(data.message || "Registration failed");
     } catch (err) {
       setError(err.message);
       return false;
@@ -89,44 +147,37 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout function
-  const logout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
-    setIsAuthenticated(false);
-  };
-
-  // Update user profile
+  // 6) Local profile update
   const updateProfile = async (profileData) => {
     setIsLoading(true);
     setError(null);
-
     try {
-      // In a real app, send profile data to server
-      // For demo, we'll just update local state
       setUser((prev) => ({ ...prev, ...profileData }));
       return true;
     } catch (err) {
-      setError(err.message || "Failed to update profile.");
+      setError(err.message || "Failed to update profile");
       return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Context value
-  const value = {
-    user,
-    isAuthenticated,
-    isLoading,
-    error,
-    login,
-    register,
-    logout,
-    updateProfile,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated,
+        isLoading,
+        error,
+        login,
+        register,
+        logout,
+        updateProfile,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 AuthProvider.propTypes = {

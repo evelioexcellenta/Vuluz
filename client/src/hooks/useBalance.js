@@ -1,49 +1,46 @@
-import { useMemo } from 'react';
-import useTransactions from './useTransactions';
-import { formatCurrency } from '../utils/formatters';
-import useAuth from './useAuth';
+import { useContext, useMemo } from "react";
+import { TransactionContext } from "../contexts/TransactionContext";
 
-/**
- * Custom hook for balance-related operations
- * @returns {Object} Balance data and operations
- */
-const useBalance = () => {
-  const {user} = useAuth();
-  const { balance, isLoading, error, summary } = useTransactions();
-  
-  // Calculate formatted values
-  const formattedBalance = useMemo(() => 
-    formatCurrency(user?.walletBalance || 0), [user?.walletBalance]);
-  
-  
-  const formattedMonthlyTopUps = useMemo(() => 
-    summary?.monthlyTopUps ? formatCurrency(summary.monthlyTopUps) : 'Rp 0.00',
-    [summary]);
-  
-  const formattedMonthlyTransfersOut = useMemo(() => 
-    summary?.monthlyTransfersOut ? formatCurrency(summary.monthlyTransfersOut) : 'Rp 0.00',
-    [summary]);
-  
-  const formattedMonthlyExpenses = useMemo(() => 
-    summary?.monthlyExpenses ? formatCurrency(summary.monthlyExpenses) : 'Rp 0.00',
-    [summary]);
-  
+export default function useBalance() {
+  const { summary, isLoading } = useContext(TransactionContext);
+
+  const balance = summary.currentBalance || 0;
+  const previous = summary.previousMonthBalance || 0;
+  const monthlyTopUps = summary.monthlyTopUps || 0;
+  const monthlyTransfersOut = summary.monthlyTransfersOut || 0;
+  const monthlyExpenses = summary.monthlyExpenses || 0;
+
   const balanceChangePercent = useMemo(() => {
-    if (!summary?.previousMonthBalance || summary.previousMonthBalance === 0) return 0;
-    return ((summary.balanceChange / summary.previousMonthBalance) * 100).toFixed(1);
-  }, [summary]);
-  
+    if (previous === 0) return "0.00";
+    return (((balance - previous) / previous) * 100).toFixed(2);
+  }, [balance, previous]);
+
+  const formatter = (value) =>
+    new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(value);
+
+  const formattedBalance = useMemo(() => formatter(balance), [balance]);
+  const formattedMonthlyTopUps = useMemo(() => formatter(monthlyTopUps), [monthlyTopUps]);
+  const formattedMonthlyTransfersOut = useMemo(
+    () => formatter(monthlyTransfersOut),
+    [monthlyTransfersOut]
+  );
+  const formattedMonthlyExpenses = useMemo(
+    () => formatter(monthlyExpenses),
+    [monthlyExpenses]
+  );
+
   return {
     balance,
     formattedBalance,
+    balanceChangePercent,
+    isLoading,
+    // untuk TransactionSummary lama
     formattedMonthlyTopUps,
     formattedMonthlyTransfersOut,
     formattedMonthlyExpenses,
-    balanceChangePercent,
-    summary,
-    isLoading,
-    error
   };
-};
-
-export default useBalance;
+}

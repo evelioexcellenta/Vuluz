@@ -10,7 +10,7 @@ const TransactionSummary = ({ className = "" }) => {
     isLoading,
   } = useBalance();
 
-  // Summary items
+  // Summary items with their inline SVG icons
   const summaryItems = [
     {
       title: "Monthly Top-ups",
@@ -83,9 +83,9 @@ const TransactionSummary = ({ className = "" }) => {
       <Card.Body>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {isLoading
-            ? Array.from({ length: 3 }).map((_, index) => (
+            ? Array.from({ length: 3 }).map((_, idx) => (
                 <div
-                  key={index}
+                  key={idx}
                   className="flex items-center space-x-4 animate-pulse"
                 >
                   <div className="p-2 rounded-full bg-gray-200 h-10 w-10"></div>
@@ -95,8 +95,8 @@ const TransactionSummary = ({ className = "" }) => {
                   </div>
                 </div>
               ))
-            : summaryItems.map((item, index) => (
-                <div key={index} className="flex items-center space-x-4">
+            : summaryItems.map((item, idx) => (
+                <div key={idx} className="flex items-center space-x-4">
                   {item.icon}
                   <div>
                     <p className="text-sm text-gray-500">{item.title}</p>

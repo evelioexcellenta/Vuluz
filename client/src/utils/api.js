@@ -57,6 +57,13 @@ export const authAPI = {
   logout: () => apiRequest("/auth/logout", { method: "POST" }),
 
   getProfile: () => apiRequest("/api/profile"),
+
+  editProfile: (data) =>
+    apiRequest("/api/profile", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  
 };
 
 // Transaction API calls

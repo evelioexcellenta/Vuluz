@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { useEffect, useContext } from "react";
+import { Navigate } from "react-router-dom";
 import AppLayout from "../../components/Layout/AppLayout";
 import BalanceCard from "../../components/Dashboard/BalanceCard";
 import TransactionSummary from "../../components/Dashboard/TransactionSummary";
@@ -6,33 +7,56 @@ import CashFlowChart from "../../components/Dashboard/CashFlowChart";
 import RecentTransactions from "../../components/Dashboard/RecentTransactions";
 import useAuth from "../../hooks/useAuth";
 import { ROUTES } from "../../constants/routes";
+import { TransactionContext } from "../../contexts/TransactionContext";
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  // ▶ Semua hooks dipanggil langsung
+  const { user, isAuthenticated } = useAuth();
+  const { reloadAllData } = useContext(TransactionContext);
+
+  // ▶ Panggil reloadAllData hanya sekali saat Dashboard pertama kali mount
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      reloadAllData();
+    }
+    // Hanya sekali, jadi kita disable exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ▶ Protect route: jika belum login, redirect ke login
+  if (!isAuthenticated || !user) {
+    return <Navigate to={ROUTES.LOGIN} replace />;
+  }
 
   return (
     <AppLayout>
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Welcome back, {user?.fullName || "User"}!
+        <h1 className="text-3xl font-bold text-gray-800 font-poppins">
+          Welcome back, {user.fullName}!
         </h1>
-        <p className="text-gray-600">Here's your financial overview on {user?.walletName}</p>
+        <p className="text-gray-600 font-poppins">
+          Here's your financial overview on {user.walletName}
+        </p>
       </div>
 
       <div className="space-y-6">
-        {/* Balance and Chart Section */}
+        {/* Balance + Account Number */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: Account + Balance (1/3) */}
           <div className="col-span-1 space-y-6">
-            {/* Account Number */}
             <div className="bg-white p-4 rounded-lg shadow-sm">
-              <p className="text-sm text-gray-500">Account Number</p>
+              <p className="text-sm text-gray-500 font-poppins">
+                Account Number
+              </p>
               <div className="flex items-center mt-1">
-                <p className="text-lg font-medium text-gray-800">
-                  {user?.walletNumber || "No Wallet"}
+                <p className="text-lg font-medium text-gray-800 font-poppins">
+                  {user.walletNumber}
                 </p>
-                <button className="ml-2 text-primary-600 hover:text-primary-700">
+                <button
+                  aria-label="Copy account"
+                  className="ml-2 text-primary hover:text-primary-700"
+                >
+                  {/* SVG icon copy */}
                   <svg
                     className="w-5 h-5"
                     fill="none"
@@ -43,7 +67,9 @@ const Dashboard = () => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth="2"
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 
+                         12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 
+                         2 0 002 2z"
                     />
                   </svg>
                 </button>
@@ -54,7 +80,7 @@ const Dashboard = () => {
             <BalanceCard />
           </div>
 
-          {/* Right: Chart (2/3) */}
+          {/* Cash Flow Chart */}
           <div className="col-span-1 lg:col-span-2">
             <CashFlowChart />
           </div>

@@ -6,5 +6,6 @@ export const ROUTES = {
   TRANSFER: '/transfer',
   TOP_UP: '/top-up',
   SETTINGS: '/settings',
-  NOT_FOUND: '*'
+  NOT_FOUND: '*',
+  PROFILE: "/profile"
 };
