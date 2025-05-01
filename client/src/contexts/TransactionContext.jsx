@@ -147,7 +147,13 @@ export const TransactionProvider = ({ children }) => {
         notes: data.description || "",
         pin: data.pin || "",
       });
-      if (resp.success) await reloadAllData();
+      if (resp.status === "Success" || resp.success === true) {
+        await reloadAllData();
+        return { success: true, data: resp };
+      } else {
+        return { success: false, error: resp.message || "Transfer failed" };
+      }
+      
       return resp;
     } catch (err) {
       setError(err.message || "Transfer failed");
