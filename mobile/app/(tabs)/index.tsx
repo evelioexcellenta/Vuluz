@@ -13,7 +13,6 @@ import { Balance } from '@/components/dashboard/Balance';
 import { TransactionSummary } from '@/components/dashboard/TransactionSummary';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
 import { router } from 'expo-router';
-import { PieChartWithFilter } from '@/components/dashboard/TransactionPieChart';
 import { useWallet } from '@/hooks/useWallet';
 // import { TransactionPieChart } from '@/components/dashboard/TransactionPieChart';
 

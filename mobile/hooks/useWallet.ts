@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useWalletStore } from '@/store/walletStore';
-import axios from 'axios'; 
+import axios from 'axios';
 import { useAuthStore } from '@/store/authStore';
 
 export function useWallet() {
@@ -23,36 +23,41 @@ export function useWallet() {
     addFavorite,
     removeFavorite,
   } = useWalletStore();
-  
-  
+
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
   const [recipientAccount, setRecipientAccount] = useState('');
   const [recipientName, setRecipientName] = useState('');
-  const [selectedRecipient, setSelectedRecipient] = useState<string | null>(null);
-  
+  const [selectedRecipient, setSelectedRecipient] = useState<string | null>(
+    null
+  );
+
   const handleTopUp = async (pin: string) => {
     if (!amount || !selectedPaymentMethod || !pin) return false;
-  
+
     const amountValue = parseFloat(amount.replace(/[^0-9]/g, ''));
     if (isNaN(amountValue) || amountValue <= 0) return false;
-  
-    const success = await topUp(amountValue, selectedPaymentMethod, pin, description);
+
+    const success = await topUp(
+      amountValue,
+      selectedPaymentMethod,
+      pin,
+      description
+    );
     if (success) {
       resetForm();
       fetchTransactionSummary();
     }
     return success;
   };
-  
-  
-  const handleTransfer = async (pin:string) => {
+
+  const handleTransfer = async (pin: string) => {
     if ((!recipientAccount && !selectedRecipient) || !amount) return false;
-    
+
     const amountValue = parseFloat(amount.replace(/[^0-9]/g, ''));
     if (isNaN(amountValue) || amountValue <= 0) return false;
-    
+
     const account = selectedRecipient || recipientAccount;
     const success = await transfer(account, amountValue, description, pin);
 
@@ -62,10 +67,10 @@ export function useWallet() {
     }
     return success;
   };
-  
+
   const handleAddFavorite = async () => {
     if (!recipientName || !recipientAccount) return false;
-    
+
     const success = await addFavorite(recipientName, recipientAccount);
     if (success) {
       setRecipientName('');
@@ -77,21 +82,23 @@ export function useWallet() {
   const handleCheckRecipient = async () => {
     try {
       const token = useAuthStore.getState().getAccessToken(); // ambil token JWT kamu
-  
-      const response = await axios.get(`http://localhost:8080/api/wallet/owner/${recipientAccount}`, {
-        headers: {
-          Authorization: `Bearer ${token}`, // kirim token di headers!
-        },
-      });
-  
+
+      const response = await axios.get(
+        `https://kelompok6.serverku.org/api/wallet/owner/${recipientAccount}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // kirim token di headers!
+          },
+        }
+      );
+
       setRecipientName(response.data.fullName);
     } catch (error) {
       console.error(error);
       setRecipientName('User not found');
     }
   };
-  
-  
+
   const resetForm = () => {
     setAmount('');
     setDescription('');
@@ -100,7 +107,7 @@ export function useWallet() {
     setRecipientName('');
     setSelectedRecipient(null);
   };
-  
+
   return {
     balance,
     transactions,
@@ -131,6 +138,6 @@ export function useWallet() {
     removeFavorite,
     resetForm,
     handleCheckRecipient,
-    fetchTransactionSummary
+    fetchTransactionSummary,
   };
 }

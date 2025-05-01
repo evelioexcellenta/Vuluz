@@ -21,6 +21,14 @@ export function TabBar({ state }: TabBarProps) {
     { name: 'transactions', label: 'Transactions', icon: BarChart3 },
     { name: 'profile', label: 'Profile', icon: User },
   ];
+
+  const pathMap = {
+    index: '/' as const,
+    'top-up': '/(tabs)/top-up' as const,
+    transfer: '/(tabs)/transfer' as const,
+    transactions: '/(tabs)/transactions' as const,
+    profile: '/(tabs)/profile' as const,
+  };
   
   const getRouteInfo = (routeName: string) => {
     return tabs.find(tab => tab.name === routeName) || tabs[0];
@@ -33,7 +41,8 @@ export function TabBar({ state }: TabBarProps) {
         const isFocused = state.index === index;
         
         const onPress = () => {
-          router.push(`/(tabs)/${route.name}`);
+          const path = pathMap[route.name as keyof typeof pathMap] || '/';
+          router.push(path);
         };
         
         return (

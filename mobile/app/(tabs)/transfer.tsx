@@ -16,6 +16,7 @@ import { FavoritesList } from '@/components/transfer/FavoritesList';
 import { Card } from '@/components/ui/Card';
 import { Star } from 'lucide-react-native';
 import { PinInput } from '@/components/ui/PinInput';
+import Toast from 'react-native-toast-message';
 
 export default function TransferScreen() {
   const {
@@ -51,6 +52,8 @@ export default function TransferScreen() {
   const [successAmount, setSuccessAmount] = useState('');
   const [successRecipient, setSuccessRecipient] = useState('');
   const [successAccount, setSuccessAccount] = useState('');
+  const [amountError, setAmountError] = useState('');
+  const [accountError, setAccountError] = useState('');
 
   useEffect(() => {
     fetchRecipients();
@@ -62,7 +65,40 @@ export default function TransferScreen() {
   };
 
   const handleContinue = () => {
+    const isAmountValid = validateAmount();
+    const isAccountValid = validateAccountNumber();
+
+    if (!isAccountValid) {
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Account',
+        text2: accountError,
+      });
+    }
+
+    if (!validateAmount()) {
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Amount',
+        text2: amountError,
+      });
+      return;
+    }
+    
+
     setConfirmModalVisible(true);
+  };
+
+  const validateAccountNumber = () => {
+    const isNumeric = /^\d+$/.test(recipientAccount);
+
+    if (!recipientAccount || !isNumeric) {
+      setAccountError('Account number must be numeric');
+      return false;
+    }
+
+    setAccountError('');
+    return true;
   };
 
   const handleConfirmTransfer = () => {
@@ -103,6 +139,23 @@ export default function TransferScreen() {
         fetchRecipients(); // Refresh list favorit
       }
     }
+  };
+
+  const validateAmount = () => {
+    const numeric = parseInt(amount.replace(/[^0-9]/g, ''), 10);
+
+    if (isNaN(numeric)) {
+      setAmountError('Amount must be a number');
+      return false;
+    }
+
+    if (numeric < 500) {
+      setAmountError('Minimum transfer is Rp 500');
+      return false;
+    }
+
+    setAmountError('');
+    return true;
   };
 
   const getSelectedRecipientName = () => {
@@ -192,10 +245,18 @@ export default function TransferScreen() {
               <TextInput
                 label="Account Number*"
                 value={recipientAccount}
-                onChangeText={setRecipientAccount}
+                onChangeText={(text) => {
+                  setRecipientAccount(text);
+                  setAccountError('');
+                }}
                 placeholder="Enter account number"
                 keyboardType="numeric"
               />
+              {accountError ? (
+                <Text style={{ color: 'red', marginBottom: 8 }}>
+                  {accountError}
+                </Text>
+              ) : null}
               <Button
                 title="Check"
                 onPress={handleCheckRecipient}
@@ -224,10 +285,16 @@ export default function TransferScreen() {
           <TextInput
             label="Amount*"
             value={amount}
-            onChangeText={setAmount}
+            onChangeText={(text) => {
+              setAmount(text);
+              setAmountError(''); // Reset error saat mengetik
+            }}
             placeholder="0"
             keyboardType="numeric"
           />
+          {amountError ? (
+            <Text style={{ color: 'red', marginBottom: 8 }}>{amountError}</Text>
+          ) : null}
 
           <TextInput
             label="Description"
@@ -255,13 +322,21 @@ export default function TransferScreen() {
       >
         <View>
           <View style={styles.addFavoriteForm}>
-            <TextInput
-              label="Input Account Number"
-              value={recipientAccount}
-              onChangeText={setRecipientAccount}
-              placeholder="Enter account number"
-              keyboardType="numeric"
-            />
+          <TextInput
+                label="Account Number*"
+                value={recipientAccount}
+                onChangeText={(text) => {
+                  setRecipientAccount(text);
+                  setAccountError('');
+                }}
+                placeholder="Enter account number"
+                keyboardType="numeric"
+              />
+              {accountError ? (
+                <Text style={{ color: 'red', marginBottom: 8 }}>
+                  {accountError}
+                </Text>
+              ) : null}
             <View style={styles.inlineAction}>
               <Button
                 title="Check"

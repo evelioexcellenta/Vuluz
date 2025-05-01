@@ -15,6 +15,7 @@ import { Modal } from '@/components/ui/Modal';
 import { formatCurrency } from '@/utils/formatters';
 import { ChevronDown } from 'lucide-react-native';
 import { PinInput } from '@/components/ui/PinInput';
+import Toast from 'react-native-toast-message';
 
 export default function TopUpScreen() {
   const {
@@ -40,6 +41,7 @@ export default function TopUpScreen() {
   const [pin, setPin] = useState(''); // state untuk menyimpan input pin
   const [successAmount, setSuccessAmount] = useState('');
   const [successPaymentMethod, setSuccessPaymentMethod] = useState('');
+  const [amountError, setAmountError] = useState('');
 
   useEffect(() => {
     fetchPaymentMethods();
@@ -52,7 +54,16 @@ export default function TopUpScreen() {
   };
 
   const handleContinue = () => {
+    if (!validateAmount()) {
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Amount',
+        text2: amountError,
+      });
+      return;
+    }
     setConfirmModalVisible(true);
+    
   };
 
   // const handleConfirmTopUp = async () => {
@@ -96,7 +107,7 @@ export default function TopUpScreen() {
   // lalu setelah user input pin dan sukses:
   const handleSubmitPin = async () => {
     const success = await handleTopUp(pin); // cukup pin aja, pakai selectedPaymentMethod dari store
-    
+
     if (success) {
       const methodName = getSelectedPaymentMethodName(); // methodName ini hanya untuk tampil di success modal
       setSuccessAmount(amount);
@@ -106,8 +117,23 @@ export default function TopUpScreen() {
     }
     setPinModalVisible(false);
   };
-  
-  
+
+  const validateAmount = () => {
+    const numeric = parseInt(amount.replace(/[^0-9]/g, ''), 10);
+
+    if (isNaN(numeric)) {
+      setAmountError('Amount must be a number');
+      return false;
+    }
+
+    if (numeric < 10000) {
+      setAmountError('Minimum top-up is Rp 10.000');
+      return false;
+    }
+
+    setAmountError('');
+    return true;
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -133,6 +159,9 @@ export default function TopUpScreen() {
             placeholder="0"
             keyboardType="numeric"
           />
+          {amountError ? (
+            <Text style={{ color: 'red', marginBottom:8 }}>{amountError}</Text>
+          ) : null}
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>Payment Method</Text>
@@ -224,7 +253,7 @@ export default function TopUpScreen() {
               width: 64,
               height: 64,
               borderRadius: 32, // setengah dari width/height supaya bulat
-              alignItems:'center',
+              alignItems: 'center',
               // resizeMode: 'contain', // Removed as it is not valid for View
             }}
           >
@@ -402,7 +431,7 @@ const styles = StyleSheet.create({
   },
   shadowProp: {
     shadowColor: '#171717',
-    shadowOffset: {width: -2, height: 4},
+    shadowOffset: { width: -2, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 10,
   },

@@ -42,7 +42,6 @@ interface WalletState {
   addFavorite: (name: string, accountNumber: string) => Promise<boolean>;
   removeFavorite: (id: string) => Promise<boolean>;
   fetchTransactionSummary: () => Promise<void>;
-
 }
 
 export const useWalletStore = create<WalletState>((set, get) => ({
@@ -63,15 +62,18 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const token = useAuthStore.getState().getAccessToken();
-  
-      const response = await axios.get('http://localhost:8080/api/summary', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
+
+      const response = await axios.get(
+        'https://kelompok6.serverku.org/api/summary',
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       const data = response.data;
-  
+
       // Map hasil backend ke struktur TransactionSummary di frontend
       set({
         transactionSummary: {
@@ -79,20 +81,19 @@ export const useWalletStore = create<WalletState>((set, get) => ({
           transfer: Number(data.totalExpense) || 0,
           netSaving: Number(data.netIncome) || 0,
         },
-        
+
         isLoading: false,
       });
-
     } catch (error: any) {
       console.error(error);
       set({
-        error: error.response?.data?.message || 'Failed to fetch transaction summary',
+        error:
+          error.response?.data?.message ||
+          'Failed to fetch transaction summary',
         isLoading: false,
       });
     }
   },
-  
-  
 
   fetchTransactions: async (params?: {
     search?: string;
@@ -110,7 +111,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         queryParams.append('transactionType', params.transactionType);
 
       const response = await axios.get(
-        `http://localhost:8080/api/history?${queryParams.toString()}`,
+        `https://kelompok6.serverku.org/api/history?${queryParams.toString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -149,7 +150,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     try {
       const token = useAuthStore.getState().getAccessToken();
       const response = await axios.get(
-        'http://localhost:8080/api/getfavorites',
+        'https://kelompok6.serverku.org/api/getfavorites',
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -216,7 +217,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       const token = useAuthStore.getState().getAccessToken();
 
       const response = await axios.post(
-        'http://localhost:8080/api/topup',
+        'https://kelompok6.serverku.org/api/topup',
         {
           amount: amount,
           paymentMethod: paymentMethodName,
@@ -269,7 +270,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       const token = useAuthStore.getState().getAccessToken();
 
       const response = await axios.post(
-        'http://localhost:8080/api/transfer',
+        'https://kelompok6.serverku.org/api/transfer',
         {
           toWalletNumber: Number(recipientAccount),
           amount: amount,
@@ -323,14 +324,17 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const token = useAuthStore.getState().getAccessToken();
-      const response = await axios.get('http://localhost:8080/api/balance', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
+      const response = await axios.get(
+        'https://kelompok6.serverku.org/api/balance',
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       const data = response.data;
-  
+
       set({
         balance: Number(data.balance) || 0,
         walletNumber: data.walletNumber?.toString() || '',
@@ -344,14 +348,13 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       });
     }
   },
-  
 
   addFavorite: async (name, accountNumber) => {
     set({ isLoading: true, error: null });
     try {
       const token = useAuthStore.getState().getAccessToken();
       const response = await axios.post(
-        'http://localhost:8080/api/favorite',
+        'https://kelompok6.serverku.org/api/favorite',
         {
           walletNumber: Number(accountNumber),
         },
@@ -397,7 +400,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       const favorite = get().recipients.find((fav) => fav.id === id);
       if (!favorite) throw new Error('Favorite not found');
 
-      await axios.delete(`http://localhost:8080/api/favorite/delete`, {
+      await axios.delete(`https://kelompok6.serverku.org/api/favorite/delete`, {
         params: { walletNumber: favorite.accountNumber },
         headers: {
           Authorization: `Bearer ${token}`,
