@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { authAPI, mockAPI } from "../utils/api";
+import { authAPI } from "../utils/api";
 
 // Create the auth context
 export const AuthContext = createContext(null);
@@ -23,7 +23,6 @@ export const AuthProvider = ({ children }) => {
           setIsAuthenticated(true);
         } catch (err) {
           console.error("Auth verification failed", err);
-          // Clear invalid token
           localStorage.removeItem("token");
           setError("Your session has expired. Please login again.");
         }
@@ -48,7 +47,6 @@ export const AuthProvider = ({ children }) => {
         const profile = await authAPI.getProfile();
         setUser(profile);
         setIsAuthenticated(true);
-        // setUser({ email: credentials.email });
         return true;
       } else {
         throw new Error(data.message || "Login failed.");
@@ -96,14 +94,12 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
   };
 
-  // Update user profile
+  // Update user profile (optional local state update)
   const updateProfile = async (profileData) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // In a real app, send profile data to server
-      // For demo, we'll just update local state
       setUser((prev) => ({ ...prev, ...profileData }));
       return true;
     } catch (err) {
@@ -114,10 +110,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Context value
+  // ✅ FIX: tambahkan `setUser` dan `setIsAuthenticated` ke context value
   const value = {
     user,
+    setUser,
     isAuthenticated,
+    setIsAuthenticated,
     isLoading,
     error,
     login,

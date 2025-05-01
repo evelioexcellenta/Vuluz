@@ -6,6 +6,7 @@ import CashFlowChart from "../../components/Dashboard/CashFlowChart";
 import RecentTransactions from "../../components/Dashboard/RecentTransactions";
 import useAuth from "../../hooks/useAuth";
 import { ROUTES } from "../../constants/routes";
+import VLogo from "../../assets/V.png";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -14,10 +15,12 @@ const Dashboard = () => {
     <AppLayout>
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">
+        <h1 className="text-3xl font-bold text-gray-800 font-poppins">
           Welcome back, {user?.fullName || "User"}!
         </h1>
-        <p className="text-gray-600">Here's your financial overview on {user?.walletName}</p>
+        <p className="text-gray-600 font-poppins">
+          Here's your financial overview on {user?.walletName || "Wallet"}
+        </p>
       </div>
 
       <div className="space-y-6">
@@ -27,12 +30,14 @@ const Dashboard = () => {
           <div className="col-span-1 space-y-6">
             {/* Account Number */}
             <div className="bg-white p-4 rounded-lg shadow-sm">
-              <p className="text-sm text-gray-500">Account Number</p>
+              <p className="text-sm text-gray-500 font-poppins">
+                Account Number
+              </p>
               <div className="flex items-center mt-1">
-                <p className="text-lg font-medium text-gray-800">
+                <p className="text-lg font-medium text-gray-800 font-poppins">
                   {user?.walletNumber || "No Wallet"}
                 </p>
-                <button className="ml-2 text-primary-600 hover:text-primary-700">
+                <button className="ml-2 text-primary hover:text-primary-700">
                   <svg
                     className="w-5 h-5"
                     fill="none"
