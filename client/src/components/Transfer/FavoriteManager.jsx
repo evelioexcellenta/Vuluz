@@ -19,7 +19,7 @@ const FavoriteManager = ({ isOpen, onClose, onSelect }) => {
   const fetchFavorites = async () => {
     try {
       const res = await apiRequest("/api/getfavorites");
-      setFavorites(res.data);
+      setFavorites(res.data || []);
     } catch (err) {
       console.error(err);
     }
@@ -27,10 +27,8 @@ const FavoriteManager = ({ isOpen, onClose, onSelect }) => {
 
   const handleCheck = async () => {
     try {
-      console.log("wall number : "+walletNumber);
-      
-      const res = await apiRequest(`/api/wallet/owner/${walletNumber}`);
-      setRecipientName(res.fullName);
+      const res = await apiRequest(`/api/wallet/owner/${Number(walletNumber)}`);
+      setRecipientName(res.fullName || "User found");
       setError("");
     } catch (err) {
       setRecipientName("");
@@ -39,24 +37,43 @@ const FavoriteManager = ({ isOpen, onClose, onSelect }) => {
   };
 
   const handleAddFavorite = async () => {
+    if (!recipientName || recipientName === "" || recipientName === "User not found") {
+      setError("Cannot add invalid account to favorites");
+      return;
+    }
+
     try {
       await apiRequest("/api/favorite", {
         method: "POST",
-        body: JSON.stringify({ walletNumber }),
+        body: JSON.stringify({ walletNumber: Number(walletNumber) }),
       });
       fetchFavorites();
       setWalletNumber("");
       setRecipientName("");
+      setError("");
     } catch (err) {
-      setError(err.message);
+      setError("Failed to add favorite");
     }
   };
 
-  const handleDelete = async (walletNumber) => {
-    await apiRequest(`/api/favorite/delete?walletNumber=${walletNumber}`, {
-      method: "DELETE",
-    });
-    fetchFavorites();
+  const handleDelete = async (walletNumberToDelete) => {
+    try {
+      const res = await apiRequest(`/api/favorite/delete?walletNumber=${Number(walletNumberToDelete)}`, {
+        method: "DELETE",
+      });
+
+      if (res?.status?.toLowerCase() === "success") {
+        setFavorites((prev) =>
+          prev.filter((fav) => fav.walletNumber !== walletNumberToDelete)
+        );
+        setError("");
+      } else {
+        setError(res?.message || "Failed to delete favorite");
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      setError("Failed to delete favorite");
+    }
   };
 
   return (
@@ -91,6 +108,10 @@ const FavoriteManager = ({ isOpen, onClose, onSelect }) => {
           </div>
         </div>
 
+        {error && (
+          <p className="text-sm text-red-500 text-center">{error}</p>
+        )}
+
         <div>
           <h2 className="text-base font-semibold text-gray-800 mb-2">
             Favorite List
@@ -113,18 +134,18 @@ const FavoriteManager = ({ isOpen, onClose, onSelect }) => {
                       <div className="text-xs">{fav.walletNumber}</div>
                     </div>
                   </div>
-                  
+
                   <div className="flex gap-2 items-center">
-                  <Button size="sm" variant="outline" onClick={() => onSelect(fav)}>
-                    Select
-                  </Button>
-                  <button
-                    onClick={() => handleDelete(fav.walletNumber)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                </div>
+                    <Button size="sm" variant="outline" onClick={() => onSelect(fav)}>
+                      Select
+                    </Button>
+                    <button
+                      onClick={() => handleDelete(fav.walletNumber)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

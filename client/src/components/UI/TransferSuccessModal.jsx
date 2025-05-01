@@ -1,46 +1,48 @@
 import PropTypes from "prop-types";
 import Modal from "./Modal";
+import { CheckCircle } from "lucide-react";
 import Button from "./Button";
 
-const TransferSuccessModal = ({ isOpen, onClose, amount, recipientName, accountNumber }) => {
+const TransferSuccessModal = ({
+  isOpen,
+  onClose,
+  amount,
+  recipientName,
+  accountNumber,
+}) => {
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Transfer Successful"
-      footer={
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <div className="text-center space-y-2 px-6 py-8">
         <div className="flex justify-center">
-          <Button variant="primary" onClick={onClose}>
-            Done
-          </Button>
-        </div>
-      }
-    >
-      <div className="flex flex-col items-center space-y-4">
-        {/* Success icon */}
-        <div className="bg-green-100 rounded-full p-4">
-          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-
-        {/* Message */}
-        <h2 className="text-lg font-semibold text-gray-800">Transfer Successful</h2>
-
-        {/* Details */}
-        <div className="bg-gray-100 p-4 rounded-lg w-full text-sm">
-          <div className="flex justify-between mb-2">
-            <span className="text-gray-500">Amount:</span>
-            <span className="font-bold text-gray-800">{amount}</span>
+          <div className="bg-green-100 rounded-full p-2">
+            <CheckCircle size={48} className="text-green-500" />
           </div>
-          <div className="flex justify-between mb-2">
-            <span className="text-gray-500">To:</span>
-            <span className="font-medium text-gray-800">{recipientName}</span>
+        </div>
+
+        <h2 className="text-xl font-bold text-gray-900">
+          Transfer Successful!
+        </h2>
+        <p className="text-sm text-gray-600">The funds have been transferred.</p>
+
+        <div className="bg-gray-100 text-sm text-left p-4 rounded-xl space-y-2 mt-4">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Amount:</span>
+            <span className="font-semibold text-gray-900">{amount}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">Account:</span>
-            <span className="font-medium text-gray-800">{accountNumber}</span>
+            <span className="text-gray-600">To:</span>
+            <span className="text-gray-900">{recipientName}</span>
           </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Account:</span>
+            <span className="text-gray-900">{accountNumber}</span>
+          </div>
+        </div>
+
+        <div className="pt-6">
+          <Button onClick={onClose} fullWidth variant="primary">
+            Confirm
+          </Button>
         </div>
       </div>
     </Modal>
@@ -52,7 +54,10 @@ TransferSuccessModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   amount: PropTypes.string.isRequired,
   recipientName: PropTypes.string.isRequired,
-  accountNumber: PropTypes.string.isRequired,
+  accountNumber: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number,
+  ]).isRequired,
 };
 
 export default TransferSuccessModal;

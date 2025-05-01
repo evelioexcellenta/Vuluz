@@ -9,8 +9,6 @@ import Alert from "../UI/Alert";
 import { isValidAmount, isAmountInRange } from "../../utils/validators";
 import { formatCurrency } from "../../utils/formatters";
 import { APP_CONFIG } from "../../constants/config";
-import PinModal from "../UI/PinModal";
-import SuccessModal from "../UI/SuccessModal";
 
 const TopUpForm = ({
   onSubmit,
@@ -21,13 +19,16 @@ const TopUpForm = ({
 }) => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [formData, setFormData] = useState(null);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [showPinModal, setShowPinModal] = useState(false);
-  const [pendingData, setPendingData] = useState(null);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    watch,
+    setValue,
+  } = useForm({
     defaultValues: {
       amount: "",
       paymentMethod: APP_CONFIG.PAYMENT_METHODS[0].id,
@@ -48,33 +49,26 @@ const TopUpForm = ({
     setShowConfirmation(true);
   };
 
-  const handlePinConfirm = async (pin) => {
-    try {
-      setShowPinModal(false);
-      const finalData = { ...pendingData, pin };
-      const result = await onSubmit(finalData);
-
-      if (result.success) {
-        setShowSuccessModal(true);
-        reset();
-      } else {
-        setError(result.error || "Top-up failed. Please try again.");
-      }
-    } catch (err) {
-      setError(err.message || "An unexpected error occurred.");
+  const handleConfirm = async () => {
+    setShowConfirmation(false);
+    const result = await onSubmit(formData); // kirim ke TopUp.jsx
+    if (!result.success && result.error) {
+      setError(result.error);
     }
+    reset(); // reset form setelah topup
   };
 
   return (
     <Card className={`animate-fade-in ${className}`}>
-      <Card.Header title="Add Money" subtitle="Top up your account balance" />
+      {/* <Card.Header title="Add Money" subtitle="Top up your account balance" /> */}
       <Card.Body>
-
-        {success && (
-          <Alert type="success" title="Top-Up Successful" onClose={() => setSuccess(false)} autoClose />
-        )}
         {error && (
-          <Alert type="error" title="Top-Up Failed" message={error} onClose={() => setError("")} />
+          <Alert
+            type="error"
+            title="Top-Up Failed"
+            message={error}
+            onClose={() => setError("")}
+          />
         )}
 
         <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -106,7 +100,7 @@ const TopUpForm = ({
               min={minTopUpAmount}
               max={maxTopUpAmount}
               {...register("amount", {
-                valueAsNumber: true, // ✅ FIX amount jadi number
+                valueAsNumber: true,
                 required: "Amount is required",
                 validate: {
                   validAmount: (value) =>
@@ -122,12 +116,14 @@ const TopUpForm = ({
               required
             />
 
-            {/* Payment Method Select */}
+            {/* Payment Method */}
             <div className="form-control">
               <label className="form-label">Payment Method</label>
               <select
                 className="form-input"
-                {...register("paymentMethod", { required: "Payment method is required" })}
+                {...register("paymentMethod", {
+                  required: "Payment method is required",
+                })}
                 disabled={isLoading}
               >
                 {APP_CONFIG.PAYMENT_METHODS.map((method) => (
@@ -152,7 +148,6 @@ const TopUpForm = ({
                 disabled={isLoading}
               />
             </div>
-
           </div>
 
           <div className="mt-6">
@@ -175,11 +170,7 @@ const TopUpForm = ({
             </Button>
             <Button
               variant="primary"
-              onClick={() => {
-                setShowConfirmation(false);
-                setPendingData(formData);
-                setShowPinModal(true);
-              }}
+              onClick={handleConfirm}
               isLoading={isLoading}
             >
               Confirm Top-Up
@@ -188,7 +179,7 @@ const TopUpForm = ({
         }
       >
         <div className="space-y-4">
-          <p className="text-gray-600">You are about to add:</p>
+          <p className="text-gray-600">You are about to top up your account with:</p>
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="flex justify-between mb-2">
               <span className="text-gray-500">Amount:</span>
@@ -210,26 +201,10 @@ const TopUpForm = ({
             )}
           </div>
           <p className="text-sm text-gray-500 italic">
-            By confirming, you agree to the terms and conditions for this payment method.
+            Please confirm the details before proceeding.
           </p>
         </div>
       </Modal>
-
-      {/* Pin Modal */}
-      <PinModal
-        isOpen={showPinModal}
-        onClose={() => setShowPinModal(false)}
-        onConfirm={handlePinConfirm}
-        isLoading={isLoading}
-      />
-
-      {/* Success Modal */}
-      <SuccessModal
-        isOpen={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
-        amount={formatCurrency(formData?.amount || 0)}
-        paymentMethod={getMethodName(formData?.paymentMethod)}
-      />
     </Card>
   );
 };
