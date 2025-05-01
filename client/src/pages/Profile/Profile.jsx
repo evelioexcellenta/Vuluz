@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import AppLayout from "../../components/Layout/AppLayout";
 import Button from "../../components/UI/Button";
 import { useForm } from "react-hook-form";
@@ -6,35 +7,41 @@ import useAuth from "../../hooks/useAuth";
 import { authAPI } from "../../utils/api";
 
 const Profile = () => {
-  const { user, setUser } = useAuth();
+  const { user, updateProfile } = useAuth();
+  const location = useLocation();
   const { register, handleSubmit, setValue } = useForm();
   const [avatarPreview, setAvatarPreview] = useState(user?.avatarUrl || "");
   const [status, setStatus] = useState("idle"); // 'idle' | 'success' | 'error'
 
+  // Reset status setiap kali navigasi (location.key berubah)
   useEffect(() => {
     setStatus("idle");
-  }, []);
+  }, [location.key]);
 
+  // Isi form saat user data ready
   useEffect(() => {
-    if (user) {
-      setValue("userName", user.userName);
-      setValue("fullName", user.fullName);
-      setValue("walletNumber", user.walletNumber);
-      setValue("email", user.email);
-    }
+    if (!user) return;
+    setValue("userName", user.userName);
+    setValue("fullName", user.fullName);
+    setValue("walletNumber", user.walletNumber);
+    setValue("email", user.email);
+    setAvatarPreview(user.avatarUrl || "");
   }, [user, setValue]);
 
   const onSubmit = async (data) => {
     try {
-      console.log("Sending data:", data); // <--- Tambah ini
+      // Kirim update ke server
       await authAPI.editProfile({
         fullName: data.fullName,
         userName: data.userName,
       });
 
-      const updatedUser = await authAPI.getProfile();
-      console.log("Updated user:", updatedUser); // <--- Tambah ini
-      setUser(updatedUser);
+      // Fetch profile terbaru
+      const refreshed = await authAPI.getProfile();
+
+      // Update context
+      await updateProfile(refreshed);
+
       setStatus("success");
     } catch (err) {
       console.error("Edit Profile Error:", err);
@@ -121,6 +128,7 @@ const Profile = () => {
                   className="w-full border rounded-md px-4 py-2 mt-1 focus:ring-primary"
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   Account Number
@@ -131,6 +139,7 @@ const Profile = () => {
                   className="w-full border rounded-md px-4 py-2 mt-1 bg-gray-100"
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   Email
