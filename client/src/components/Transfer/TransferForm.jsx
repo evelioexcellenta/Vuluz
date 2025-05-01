@@ -7,11 +7,7 @@ import Button from "../UI/Button";
 import Modal from "../UI/Modal";
 import Alert from "../UI/Alert";
 import PinModal from "../UI/PinModal";
-import {
-  isValidAccountNumber,
-  isValidAmount,
-  isAmountInRange,
-} from "../../utils/validators";
+import { isValidAccountNumber } from "../../utils/validators";
 import { formatCurrency } from "../../utils/formatters";
 import { apiRequest } from "../../utils/api";
 import TransferSuccessModal from "../UI/TransferSuccessModal";
@@ -28,10 +24,9 @@ const TransferForm = ({
   const [pendingData, setPendingData] = useState(null);
   const [showPinModal, setShowPinModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [successData, setSuccessData] = useState(null);
   const [error, setError] = useState("");
   const [recipientName, setRecipientName] = useState("");
-  const [successData, setSuccessData] = useState(null);
 
   const {
     register,
@@ -49,25 +44,36 @@ const TransferForm = ({
   });
 
   const amountValue = watch("amount");
+  const accountNumberValue = watch("accountNumber");
+  const descriptionValue = watch("description");
 
-  const handleFormSubmit = (data) => {
-    setFormData({
-      ...data,
-      recipient: recipientName,
-    });
+  const handleFormSubmit = () => {
+    const parsedAmount = parseFloat(amountValue);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      setError("Please enter a valid amount greater than 0.");
+      return;
+    }
+
+    const transferData = {
+      accountNumber: accountNumberValue,
+      amount: parsedAmount,
+      recipient: recipientName || "Unknown",
+      description: descriptionValue,
+    };
+
+    setFormData(transferData);
     setShowConfirmation(true);
   };
 
   const handleConfirmTransfer = () => {
-    setPendingData(formData); // Simpan data sementara
+    setPendingData(formData);
     setShowConfirmation(false);
-    setShowPinModal(true); // Buka modal pin
+    setShowPinModal(true);
   };
 
   const handlePinConfirm = async (pin) => {
     try {
       setShowPinModal(false);
-
       const finalData = { ...pendingData, pin };
       const result = await onSubmit(finalData);
 
@@ -79,24 +85,13 @@ const TransferForm = ({
         });
         setShowSuccessModal(true);
         reset();
+        setRecipientName("");
       } else {
-        if (result.error === "JWT token expired") {
-          setError("Please Relogin");
-        } else {
-          setError("Transfer failed. Please try again.");
-        }
+        setError(result.error || "Transfer failed. Please try again.");
       }
     } catch (err) {
       setError(err.message || "An unexpected error occurred.");
     }
-  };
-
-  const handleDismissSuccess = () => {
-    setSuccess(false);
-  };
-
-  const handleDismissError = () => {
-    setError("");
   };
 
   const handleCheckAccount = async () => {
@@ -106,18 +101,10 @@ const TransferForm = ({
       return;
     }
     try {
-      const res = await apiRequest(
-        `/api/wallet/owner/${Number(accountNumber)}`
-      );
-      if (res.fullName) {
-        setRecipientName(res.fullName);
-      } else if (res.data && res.data.fullName) {
-        setRecipientName(res.data.fullName);
-      } else {
-        setRecipientName("User not found");
-      }
+      const res = await apiRequest(`/api/wallet/owner/${Number(accountNumber)}`);
+      setRecipientName(res.fullName || res.data?.fullName || "User not found");
       setError("");
-    } catch (err) {
+    } catch {
       setRecipientName("");
       setError("User not found");
     }
@@ -125,66 +112,34 @@ const TransferForm = ({
 
   return (
     <Card className={`animate-fade-in ${className}`}>
-      <Card.Header
-        title="Transfer Money"
-        subtitle="Send money to another account"
-      />
-      <Card.Body>
-        {success && (
-          <Alert
-            type="success"
-            title="Transfer Successful"
-            message="Your money has been sent successfully."
-            onClose={handleDismissSuccess}
-            autoClose={true}
-            className="mb-4"
-          />
-        )}
-
+      <Card.Header title="Transfer Money" subtitle="Send money to another account" />
+      <Card.Body className="font-poppins">
         {error && (
-          <Alert
-            type="error"
-            title="Transfer Failed"
-            message={error}
-            onClose={handleDismissError}
-            className="mb-4"
-          />
+          <Alert type="error" title="Transfer Failed" message={error} onClose={() => setError("")} />
         )}
 
         <form onSubmit={handleSubmit(handleFormSubmit)}>
-          {/* Account Number */}
           <div className="form-control">
-            <label htmlFor="accountNumber" className="form-label">
-              Account Number <span className="text-red-500">*</span>
-            </label>
+            <label className="form-label">Account Number *</label>
             <div className="flex gap-2">
               <input
                 type="number"
-                id="accountNumber"
-                placeholder="e.g. 123456"
                 className="form-input flex-1"
                 {...register("accountNumber", {
                   required: "Account number is required",
-                  min: { value: 100000, message: "Minimum 6 digits" },
-                  max: { value: 999999999999, message: "Maximum 12 digits" },
+                  min: { value: 100000, message: "Min 6 digits" },
+                  max: { value: 999999999999, message: "Max 12 digits" },
                   validate: {
                     validAccount: (value) =>
-                      isValidAccountNumber(value) ||
-                      "Please enter a valid account number",
+                      isValidAccountNumber(value) || "Invalid account number",
                   },
                 })}
                 disabled={isLoading}
               />
-              <Button
-                type="button"
-                className="h-full"
-                variant="primary"
-                onClick={handleCheckAccount}
-              >
+              <Button type="button" variant="primary" onClick={handleCheckAccount}>
                 Check
               </Button>
             </div>
-            <p className="form-helper">Enter the 6-12 digit account number</p>
             {errors.accountNumber && (
               <p className="text-sm text-red-500 mt-1">
                 {errors.accountNumber.message}
@@ -192,94 +147,55 @@ const TransferForm = ({
             )}
           </div>
 
-          <div className="space-y-4">
-            {/* Recipient Name */}
-            <Input
-              label="Recipient Name"
-              type="text"
-              id="recipient"
-              value={recipientName || "User not found"}
-              readOnly
-              disabled
-            />
+          <Input
+            label="Recipient Name"
+            id="recipient"
+            value={recipientName || "User not found"}
+            readOnly
+            disabled
+          />
 
-            {/* Amount */}
-            <Input
-              label="Amount"
-              type="number"
-              id="amount"
-              step="0.01"
-              min={minTransferAmount}
-              max={maxTransferAmount}
-              {...register("amount", {
-                required: "Amount is required",
-                validate: {
-                  validAmount: (value) =>
-                    isValidAmount(value) || "Please enter a valid amount",
-                  minAmount: (value) =>
-                    isAmountInRange(
-                      value,
-                      minTransferAmount,
-                      maxTransferAmount
-                    ) ||
-                    `Amount must be between ${formatCurrency(
-                      minTransferAmount
-                    )} and ${formatCurrency(maxTransferAmount)}`,
-                },
-              })}
-              error={errors.amount?.message}
-              placeholder="0.00"
+          <Input
+            label="Amount"
+            type="number"
+            id="amount"
+            step="0.01"
+            min={minTransferAmount}
+            max={maxTransferAmount}
+            {...register("amount")}
+            error={errors.amount?.message}
+            placeholder="0.00"
+            disabled={isLoading}
+            required
+          />
+
+          <div className="form-control">
+            <label className="form-label">Description</label>
+            <textarea
+              rows="3"
+              className="form-input"
+              placeholder="What's this transfer for?"
+              {...register("description")}
               disabled={isLoading}
-              required
-            />
-
-            {/* Description */}
-            <div className="form-control">
-              <label htmlFor="description" className="form-label">
-                Description
-              </label>
-              <textarea
-                id="description"
-                rows="3"
-                className="form-input"
-                placeholder="What's this transfer for?"
-                {...register("description")}
-                disabled={isLoading}
-              ></textarea>
-            </div>
+            ></textarea>
           </div>
 
-          <div className="mt-6">
-            <Button
-              type="submit"
-              variant="primary"
-              fullWidth
-              isLoading={isLoading}
-            >
-              Continue
-            </Button>
-          </div>
+          <Button type="submit" variant="primary" fullWidth isLoading={isLoading}>
+            Continue
+          </Button>
         </form>
       </Card.Body>
 
-      {/* Confirmation Modal */}
       <Modal
         isOpen={showConfirmation}
         onClose={() => setShowConfirmation(false)}
         title="Confirm Transfer"
         footer={
-          <div className="flex justify-end space-x-3">
-            <Button
-              variant="outline"
-              onClick={() => setShowConfirmation(false)}
-            >
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setShowConfirmation(false)}>
               Cancel
             </Button>
-            <Button
-              variant="primary"
-              onClick={handleConfirmTransfer}
-              isLoading={isLoading}
-            >
+            <Button variant="primary" onClick={handleConfirmTransfer} isLoading={isLoading}>
               Confirm Transfer
             </Button>
           </div>
@@ -287,29 +203,21 @@ const TransferForm = ({
       >
         <div className="space-y-4">
           <p className="text-gray-600">You are about to transfer:</p>
-
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="flex justify-between mb-2">
               <span className="text-gray-500">Amount:</span>
               <span className="font-bold text-gray-800">
-                {formatCurrency(amountValue)}
+                {formatCurrency(formData?.amount)}
               </span>
             </div>
-
             <div className="flex justify-between mb-2">
               <span className="text-gray-500">To:</span>
-              <span className="font-medium text-gray-800">
-                {formData?.recipient}
-              </span>
+              <span className="font-medium text-gray-800">{formData?.recipient}</span>
             </div>
-
             <div className="flex justify-between mb-2">
               <span className="text-gray-500">Account:</span>
-              <span className="font-medium text-gray-800">
-                {formData?.accountNumber}
-              </span>
+              <span className="font-medium text-gray-800">{formData?.accountNumber}</span>
             </div>
-
             {formData?.description && (
               <div className="flex justify-between">
                 <span className="text-gray-500">Description:</span>
@@ -317,14 +225,12 @@ const TransferForm = ({
               </div>
             )}
           </div>
-
           <p className="text-sm text-gray-500 italic">
             Please verify the information above before confirming.
           </p>
         </div>
       </Modal>
 
-      {/* Pin Modal */}
       <PinModal
         isOpen={showPinModal}
         onClose={() => setShowPinModal(false)}
@@ -332,7 +238,6 @@ const TransferForm = ({
         isLoading={isLoading}
       />
 
-      {/* Success Modal */}
       {successData && (
         <TransferSuccessModal
           isOpen={showSuccessModal}

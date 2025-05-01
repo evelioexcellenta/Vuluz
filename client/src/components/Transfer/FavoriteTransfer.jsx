@@ -9,7 +9,7 @@ import { apiRequest } from "../../utils/api";
 import { formatCurrency } from "../../utils/formatters";
 import FavoriteManager from "./FavoriteManager";
 import PinModal from "../UI/PinModal";
-import TransferSuccessModal from "../UI/TransferSuccessModal"; // Modal baru khusus transfer sukses!
+import TransferSuccessModal from "../UI/TransferSuccessModal";
 
 const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
   const [favorites, setFavorites] = useState([]);
@@ -56,7 +56,7 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
   };
 
   const handleConfirmTransfer = () => {
-    setPendingData(formData);  // simpan data
+    setPendingData(formData);
     setShowConfirmation(false);
     setShowPinModal(true);
   };
@@ -91,12 +91,7 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
       <Card.Header title="Transfer via Favorite" subtitle="Send Money to Your Favorite Recipient Quickly" />
       <Card.Body className="space-y-4">
         {error && (
-          <Alert
-            type="error"
-            title="Error"
-            message={error}
-            onClose={() => setError("")}
-          />
+          <Alert type="error" title="Error" message={error} onClose={() => setError("")} />
         )}
 
         <div>
@@ -111,6 +106,7 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
             onSelect={(fav) => {
               setSelectedFavorite(fav);
               setShowFavoritesPopup(false);
+              fetchFavorites(); // refresh list after add/delete
             }}
           />
 
@@ -159,24 +155,16 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
         </Button>
       </Card.Body>
 
-      {/* Confirmation Modal */}
       <Modal
         isOpen={showConfirmation}
         onClose={() => setShowConfirmation(false)}
         title="Confirm Transfer"
         footer={
           <div className="flex justify-end space-x-3">
-            <Button
-              variant="outline"
-              onClick={() => setShowConfirmation(false)}
-            >
+            <Button variant="outline" onClick={() => setShowConfirmation(false)}>
               Cancel
             </Button>
-            <Button
-              variant="primary"
-              onClick={handleConfirmTransfer}
-              isLoading={isLoading}
-            >
+            <Button variant="primary" onClick={handleConfirmTransfer} isLoading={isLoading}>
               Confirm Transfer
             </Button>
           </div>
@@ -221,7 +209,6 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
         </div>
       </Modal>
 
-      {/* PIN Modal */}
       <PinModal
         isOpen={showPinModal}
         onClose={() => setShowPinModal(false)}
@@ -229,7 +216,6 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
         isLoading={isLoading}
       />
 
-      {/* Transfer Success Modal */}
       {successData && (
         <TransferSuccessModal
           isOpen={showSuccessModal}
