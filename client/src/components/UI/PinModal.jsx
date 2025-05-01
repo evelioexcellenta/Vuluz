@@ -1,63 +1,74 @@
-import { useState, useEffect } from 'react';
-import Modal from './Modal';
-import Button from './Button';
-import PropTypes from 'prop-types';
+import { useState } from "react";
+import PropTypes from "prop-types";
+import Modal from "./Modal";
+import Button from "./Button";
 
-const PinModal = ({ isOpen, onClose, onConfirm, isLoading }) => {
-  const [pin, setPin] = useState('');
+const PinModal = ({ isOpen, onClose, onConfirm, isLoading = false }) => {
+  const [pin, setPin] = useState(["", "", "", "", "", ""]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      setPin(''); // reset pin saat modal ditutup
+  const handleChange = (value, index) => {
+    const updatedPin = [...pin];
+    updatedPin[index] = value;
+    setPin(updatedPin);
+
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`pin-${index + 1}`);
+      if (nextInput) nextInput.focus();
     }
-  }, [isOpen]);
-
-  const handleChange = (e) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-    setPin(value);
   };
 
-  const handleSubmit = () => {
-    if (pin.length === 6) {
-      onConfirm(pin);
-    } else {
-      alert('PIN must be 6 digits');
+  const handleBackspace = (e, index) => {
+    if (e.key === "Backspace" && !pin[index] && index > 0) {
+      const prevInput = document.getElementById(`pin-${index - 1}`);
+      if (prevInput) prevInput.focus();
+    }
+  };
+
+  const handleConfirm = () => {
+    const pinCode = pin.join("");
+    if (pinCode.length === 6) {
+      onConfirm(pinCode);
+      setPin(["", "", "", "", "", ""]);
     }
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Enter PIN"
-      footer={
-        <div className="flex justify-end space-x-3">
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleSubmit} isLoading={isLoading}>
-            {isLoading ? (
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-              </svg>
-            ) : (
-              'Confirm'
-            )}
-          </Button>
+    <Modal isOpen={isOpen} onClose={onClose} title="Enter PIN">
+      <div className="space-y-6">
+        <div className="flex justify-center gap-3 mt-2">
+          {pin.map((val, i) => (
+            <input
+              key={i}
+              id={`pin-${i}`}
+              type="password"
+              inputMode="numeric"
+              maxLength={1}
+              className="w-12 h-12 border rounded-lg text-center text-xl border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              value={val}
+              onChange={(e) => handleChange(e.target.value, i)}
+              onKeyDown={(e) => handleBackspace(e, i)}
+            />
+          ))}
         </div>
-      }
-    >
-      <div className="flex justify-center mb-4">
-        <input
-          type="password"
-          value={pin}
-          onChange={handleChange}
-          maxLength={6}
-          className="text-center border border-gray-300 rounded-md p-2 text-lg tracking-widest"
-          placeholder="••••••"
-          disabled={isLoading}
-        />
+
+        <div className="flex justify-end gap-4 border-t pt-4">
+          <button
+            onClick={() => {
+              setPin(["", "", "", "", "", ""]);
+              onClose();
+            }}
+            className="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-100"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={isLoading}
+            className="bg-purple-500 hover:bg-purple-600 text-white font-semibold px-6 py-2 rounded"
+          >
+            Confirm
+          </button>
+        </div>
       </div>
     </Modal>
   );

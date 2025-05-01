@@ -8,18 +8,16 @@ import useTransactions from '../../hooks/useTransactions';
 const Transfer = () => {
   const [transferMode, setTransferMode] = useState('favorites'); // 'favorites' or 'manual'
   const { createTransfer, isLoading } = useTransactions();
-  
-  // Handle tranasfer form submission
+
   const handleTransfer = async (transferData) => {
     return await createTransfer(transferData);
   };
-  
+
   return (
     <AppLayout>
       <div className="space-y-6 max-w-2xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-800">Transfer Money</h1>
-        
-        {/* Transfer Mode Toggle */}
+
         <Card>
           <Card.Body>
             <div className="bg-gray-100 p-1 rounded-lg inline-flex">
@@ -29,8 +27,7 @@ const Transfer = () => {
                   px-4 py-2 rounded-md text-sm font-medium transition-all
                   ${transferMode === 'favorites'
                     ? 'bg-white text-primary-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                  }
+                    : 'text-gray-600 hover:text-gray-900'}
                 `}
               >
                 Favorite Recipients
@@ -41,8 +38,7 @@ const Transfer = () => {
                   px-4 py-2 rounded-md text-sm font-medium transition-all
                   ${transferMode === 'manual'
                     ? 'bg-white text-primary-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                  }
+                    : 'text-gray-600 hover:text-gray-900'}
                 `}
               >
                 Manual Transfer
@@ -50,15 +46,14 @@ const Transfer = () => {
             </div>
           </Card.Body>
         </Card>
-        
-        {/* Transfer Forms */}
+
         {transferMode === 'favorites' ? (
-          <FavoriteTransfer 
+          <FavoriteTransfer
             onSubmit={handleTransfer}
             isLoading={isLoading}
           />
         ) : (
-          <TransferForm 
+          <TransferForm
             onSubmit={handleTransfer}
             isLoading={isLoading}
           />
