@@ -25,7 +25,7 @@
             "kotlinVersion": "1.9.25"
           }
         }
-      ]
+      ] 
     ],
     "experiments": {
       "typedRoutes": true
@@ -42,4 +42,4 @@
       "package": "com.evelio.excellenta.boltexponativewindp"
     }
   }
-}
+  }
