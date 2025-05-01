@@ -387,6 +387,7 @@ const styles = StyleSheet.create({
   },
   transactionItem: {
     marginBottom: 16,
+    backgroundColor:'#FAFBFD',
   },
   transactionHeader: {
     flexDirection: 'row',

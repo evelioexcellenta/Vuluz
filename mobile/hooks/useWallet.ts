@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 export function useWallet() {
   const {
     balance,
+    walletNumber,
     transactions,
     recipients,
     paymentMethods,
@@ -15,11 +16,14 @@ export function useWallet() {
     fetchTransactions,
     fetchRecipients,
     fetchPaymentMethods,
+    fetchBalance,
+    fetchTransactionSummary,
     topUp,
     transfer,
     addFavorite,
-    removeFavorite
+    removeFavorite,
   } = useWalletStore();
+  
   
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -37,6 +41,7 @@ export function useWallet() {
     const success = await topUp(amountValue, selectedPaymentMethod, pin, description);
     if (success) {
       resetForm();
+      fetchTransactionSummary();
     }
     return success;
   };
@@ -53,6 +58,7 @@ export function useWallet() {
 
     if (success) {
       resetForm();
+      fetchTransactionSummary();
     }
     return success;
   };
@@ -118,11 +124,13 @@ export function useWallet() {
     fetchTransactions,
     fetchRecipients,
     fetchPaymentMethods,
+    fetchBalance,
     handleTopUp,
     handleTransfer,
     handleAddFavorite,
     removeFavorite,
     resetForm,
     handleCheckRecipient,
+    fetchTransactionSummary
   };
 }

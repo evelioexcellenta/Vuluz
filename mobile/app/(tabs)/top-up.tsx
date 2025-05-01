@@ -304,7 +304,7 @@ export default function TopUpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAFBFD',
   },
   scrollView: {
     flex: 1,
@@ -399,5 +399,11 @@ const styles = StyleSheet.create({
   paymentMethodDetail: {
     fontSize: 14,
     color: '#666',
+  },
+  shadowProp: {
+    shadowColor: '#171717',
+    shadowOffset: {width: -2, height: 4},
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
   },
 });

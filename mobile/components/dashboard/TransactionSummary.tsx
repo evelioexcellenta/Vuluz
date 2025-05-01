@@ -1,201 +1,214 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { Card } from '@/components/ui/Card';
-import { formatCurrency } from '@/utils/formatters';
-import { PieChart } from 'react-native-chart-kit';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { ArrowUp, ArrowDown, CreditCard } from 'lucide-react-native';
+import { formatCurrency } from '@/utils/formatters';
+import Svg, { Circle, G } from 'react-native-svg';
+import { useWallet } from '@/hooks/useWallet';
+import { black } from 'react-native-paper/lib/typescript/styles/themes/v2/colors';
 
 interface TransactionSummaryProps {
   topup: number;
   transfer: number;
-  expense: number;
+  netSaving: number;
 }
 
-export function TransactionSummary({ topup, transfer, expense }: TransactionSummaryProps) {
-  const [activeTab, setActiveTab] = useState<'weekly' | 'monthly' | 'quarterly'>('monthly');
-  
-  const pieData = [
-    {
-      name: 'Income',
-      population: 40,
-      color: '#7C5DF9',
-      legendFontColor: '#7F7F7F',
-      legendFontSize: 12,
-    },
-    {
-      name: 'Expenses',
-      population: 60,
-      color: '#D6D0FB',
-      legendFontColor: '#7F7F7F',
-      legendFontSize: 12,
-    },
-  ];
-  
+export function TransactionSummary({
+  topup,
+  transfer,
+  netSaving,
+}: TransactionSummaryProps) {
+  const total = topup + transfer;
+  const incomePercentage = total === 0 ? 0 : (topup / total) * 100;
+  const expensePercentage = 100 - incomePercentage;
+
+  const size = 120;
+  const strokeWidth = 14;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const incomeStrokeDashoffset = circumference * (1 - incomePercentage / 100);
+
+  const netSavingColor = netSaving > 0 ? '#4CAF50' : '#EB5757';
+
   return (
-    <Card style={styles.container}>
+    <View style={[styles.card, styles.shadowProp]}>
       <Text style={styles.title}>Transaction Summary</Text>
-      
-      <View style={styles.summaryContainer}>
-        <View style={styles.summaryCol}>
-          <View style={[styles.iconContainer, styles.topupIcon]}>
-            <ArrowUp size={20} color="#6FCF97" />
+
+      <View style={styles.row}>
+        <View style={styles.leftCol}>
+          <View style={styles.rowItem}>
+            <View
+              style={[
+                styles.iconCircle,
+                { backgroundColor: 'rgba(111, 207, 151, 0.2)' },
+              ]}
+            >
+              <ArrowUp color="#6FCF97" size={20} />
+            </View>
+            <View>
+              <Text style={styles.label}>Monthly Top-ups</Text>
+              <Text style={styles.value}>{formatCurrency(topup)}</Text>
+            </View>
           </View>
-          <View style={styles.summaryTextContainer}>
-            <Text style={styles.summaryLabel}>Monthly Top-ups</Text>
-            <Text style={styles.summaryValue}>{formatCurrency(topup)}</Text>
+
+          <View style={styles.rowItem}>
+            <View
+              style={[
+                styles.iconCircle,
+                { backgroundColor:  'rgba(235, 87, 87, 0.2)' },
+              ]}
+            >
+              <ArrowDown color="#EB5757" size={20} />
+            </View>
+            <View>
+              <Text style={styles.label}>Monthly Transfers</Text>
+              <Text style={styles.value}>{formatCurrency(transfer)}</Text>
+            </View>
           </View>
         </View>
-        
-        <View style={styles.summaryCol}>
-          <View style={[styles.iconContainer, styles.transferIcon]}>
-            <ArrowDown size={20} color="#56CCF2" />
-          </View>
-          <View style={styles.summaryTextContainer}>
-            <Text style={styles.summaryLabel}>Monthly Transfers</Text>
-            <Text style={styles.summaryValue}>{formatCurrency(transfer)}</Text>
-          </View>
-        </View>
-        
-        <View style={styles.summaryCol}>
-          <View style={[styles.iconContainer, styles.expenseIcon]}>
-            <CreditCard size={20} color="#EB5757" />
-          </View>
-          <View style={styles.summaryTextContainer}>
-            <Text style={styles.summaryLabel}>Monthly Expenses</Text>
-            <Text style={styles.summaryValue}>{formatCurrency(expense)}</Text>
+
+        <View style={styles.rightCol}>
+          <Svg width={size} height={size}>
+            <G rotation="-90" origin={`${size / 2}, ${size / 2}`}>
+              <Circle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke="#E0E0E0"
+                strokeWidth={strokeWidth}
+                fill="transparent"
+              />
+              <Circle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                stroke="#7C5DF9"
+                strokeWidth={strokeWidth}
+                strokeDasharray={`${circumference} ${circumference}`}
+                strokeDashoffset={incomeStrokeDashoffset}
+                strokeLinecap="round"
+                fill="transparent"
+              />
+            </G>
+          </Svg>
+          <View style={styles.chartLabels}>
+            <Text style={styles.chartText}>
+              {Math.round(incomePercentage)}%
+            </Text>
+            <Text style={styles.chartLabel}>Income</Text>
+            <Text style={styles.chartTextSmall}>
+              {Math.round(expensePercentage)}%
+            </Text>
+            <Text style={styles.chartLabel}>Expenses</Text>
           </View>
         </View>
       </View>
-      
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'weekly' && styles.activeTab]}
-          onPress={() => setActiveTab('weekly')}
+
+      <View style={styles.expenseRow}>
+        <View
+          style={[
+            styles.iconCircle,
+            {
+              backgroundColor:'rgba(86, 204, 242, 0.2)'
+            },
+          ]}
         >
-          <Text style={[styles.tabText, activeTab === 'weekly' && styles.activeTabText]}>
-            Weekly
+          <CreditCard color={'#56CCF2'} size={20} />
+        </View>
+        <View>
+          <Text style={styles.label}>Monthly netSaving</Text>
+          <Text style={[styles.value, { color: netSavingColor }]}>
+            {formatCurrency(netSaving)}
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'monthly' && styles.activeTab]}
-          onPress={() => setActiveTab('monthly')}
-        >
-          <Text style={[styles.tabText, activeTab === 'monthly' && styles.activeTabText]}>
-            Monthly
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'quarterly' && styles.activeTab]}
-          onPress={() => setActiveTab('quarterly')}
-        >
-          <Text style={[styles.tabText, activeTab === 'quarterly' && styles.activeTabText]}>
-            Quarterly
-          </Text>
-        </TouchableOpacity>
+        </View>
       </View>
-      
-      <View style={styles.chartContainer}>
-        <PieChart
-          data={pieData}
-          width={300}
-          height={180}
-          chartConfig={{
-            backgroundColor: '#FFFFFF',
-            backgroundGradientFrom: '#FFFFFF',
-            backgroundGradientTo: '#FFFFFF',
-            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          }}
-          accessor="population"
-          backgroundColor="transparent"
-          paddingLeft="15"
-          absolute
-        />
-      </View>
-    </Card>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
     padding: 16,
     marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  shadowProp: {
+    shadowColor: '#171717',
+    shadowOffset: { width: -2, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 12,
   },
-  summaryContainer: {
-    marginBottom: 20,
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  summaryCol: {
+  leftCol: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  rightCol: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowItem: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
+      
   },
-  iconContainer: {
+  iconCircle: {
     width: 40,
     height: 40,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
-  topupIcon: {
-    backgroundColor: 'rgba(111, 207, 151, 0.2)',
-  },
-  transferIcon: {
-    backgroundColor: 'rgba(86, 204, 242, 0.2)',
-  },
-  expenseIcon: {
-    backgroundColor: 'rgba(235, 87, 87, 0.2)',
-  },
-  summaryTextContainer: {
-    flex: 1,
-  },
-  summaryLabel: {
+  label: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 4,
   },
-  summaryValue: {
+  value: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
   },
-  tabContainer: {
-    flexDirection: 'row',
-    marginBottom: 16,
-    backgroundColor: '#F7F7FB',
-    borderRadius: 8,
-    padding: 4,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 8,
+  chartLabels: {
+    position: 'absolute',
     alignItems: 'center',
-    borderRadius: 6,
   },
-  activeTab: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  tabText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  activeTabText: {
+  chartText: {
+    fontSize: 16,
+    fontWeight: '700',
     color: '#7C5DF9',
-    fontWeight: '600',
   },
-  chartContainer: {
+  chartTextSmall: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#999',
+    marginTop: 4,
+  },
+  chartLabel: {
+    fontSize: 12,
+    color: '#999',
+  },
+  expenseRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 16,
+    justifyContent:'center',
+    borderWidth: 2,
+    padding:2,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
   },
 });

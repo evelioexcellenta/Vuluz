@@ -41,5 +41,5 @@ export interface PaymentMethod {
 export interface TransactionSummary {
   topup: number;
   transfer: number;
-  expense: number;
+  netSaving: number; // <--- ganti dari "expense"
 }
