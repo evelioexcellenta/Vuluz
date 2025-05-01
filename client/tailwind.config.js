@@ -8,17 +8,17 @@ export default {
     extend: {
       colors: {
         primary: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#4F46E5',
-          600: '#4338ca',
-          700: '#3730a3',
-          800: '#312e81',
-          900: '#281e5d',
-          950: '#1e1b4b',
+          50: '#EEF2FF',
+          100: '#E0E7FF',
+          200: '#C7D2FE',
+          300: '#A5B4FC',
+          400: '#818CF8',
+          500: '#7C6AD9',
+          600: '#6B52C4',
+          700: '#5A42B0',
+          800: '#49349D',
+          900: '#37288A',
+          950: '#251C76',
         },
         secondary: {
           50: '#F5F3FF',
@@ -49,7 +49,7 @@ export default {
         success: {
           50: '#F0FDF4',
           100: '#DCFCE7',
-          500: '#22C55E',
+          500: '#5AAC44', 
           600: '#16A34A',
         },
         warning: {
@@ -63,10 +63,11 @@ export default {
           100: '#FEE2E2',
           500: '#EF4444',
           600: '#DC2626',
-        }
+        },
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        poppins: ['Poppins', 'sans-serif'],
+        protest: ['"Protest Guerrilla"', 'cursive'],
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',
