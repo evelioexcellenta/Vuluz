@@ -17,6 +17,8 @@ const Login = () => {
     register,
     handleSubmit,
     formState: { errors },
+    setError: setFormError,
+    clearErrors,
   } = useForm({
     defaultValues: {
       email: "",
@@ -33,11 +35,35 @@ const Login = () => {
   const onSubmit = async (data) => {
     try {
       setError("");
+      clearErrors();
+
       const success = await login(data);
       if (success) navigate(ROUTES.DASHBOARD);
+      else {
+        // Handle case where login returns false but doesn't throw
+        setError("Invalid email or password");
+        highlightErrorFields();
+      }
     } catch (err) {
-      setError(err.message || "Login failed. Please try again.");
+      console.error("Login error:", err);
+
+      // Always display a generic error message for security
+      setError("Invalid email or password");
+      highlightErrorFields();
     }
+  };
+
+  // Helper to highlight both fields for error
+  const highlightErrorFields = () => {
+    setFormError("email", {
+      type: "manual",
+      message: "",
+    });
+
+    setFormError("password", {
+      type: "manual",
+      message: "",
+    });
   };
 
   return (
@@ -75,6 +101,29 @@ const Login = () => {
             <p className="text-gray-600 text-sm">Sign in to your account</p>
           </div>
 
+          {/* PROMINENT ERROR MESSAGE */}
+          {error && (
+            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-sm">
+              <div className="flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                <span>{error}</span>
+              </div>
+            </div>
+          )}
+
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="bg-white p-6 space-y-4 shadow-sm rounded-xl"
@@ -87,17 +136,24 @@ const Login = () => {
               <input
                 type="email"
                 placeholder="your@email.com"
+                autoComplete="email"
                 {...register("email", {
                   required: "Email is required",
                   validate: {
                     validEmail: (value) =>
-                      isValidEmail(value) || "Invalid email",
+                      isValidEmail(value) || "Invalid email format",
                   },
                 })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className={`w-full px-4 py-2 border ${
+                  errors.email ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 ${
+                  errors.email ? "focus:ring-red-500" : "focus:ring-primary-500"
+                }`}
               />
-              {errors.email && (
-                <p className="text-red-500 text-sm">{errors.email.message}</p>
+              {errors.email?.type !== "manual" && errors.email && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
@@ -108,10 +164,17 @@ const Login = () => {
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
+                  autoComplete="current-password"
                   {...register("password", {
                     required: "Password is required",
                   })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 pr-10"
+                  className={`w-full px-4 py-2 border ${
+                    errors.password ? "border-red-500" : "border-gray-300"
+                  } rounded-md focus:outline-none focus:ring-2 ${
+                    errors.password
+                      ? "focus:ring-red-500"
+                      : "focus:ring-primary-500"
+                  } pr-10`}
                 />
                 <button
                   type="button"
@@ -151,8 +214,8 @@ const Login = () => {
                   )}
                 </button>
               </div>
-              {errors.password && (
-                <p className="text-red-500 text-sm">
+              {errors.password?.type !== "manual" && errors.password && (
+                <p className="text-red-500 text-sm mt-1">
                   {errors.password.message}
                 </p>
               )}
@@ -160,7 +223,7 @@ const Login = () => {
 
             {/* Forgot password */}
             <div className="text-right text-sm">
-              <a href="#" className="text-primary-600 hover:underline">
+              <a href="#" className="text-[#7C6AD9] hover:underline">
                 Forgot your password?
               </a>
             </div>
