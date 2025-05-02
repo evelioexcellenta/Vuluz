@@ -1,6 +1,7 @@
 {
   "expo": {
-    "name": "bolt-expo-nativewind",
+    "owner": "aufabi",
+    "name": "Vuluz",
     "slug": "bolt-expo-nativewind",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -25,7 +26,7 @@
             "kotlinVersion": "1.9.25"
           }
         }
-      ] 
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -35,11 +36,15 @@
         "origin": false
       },
       "eas": {
-        "projectId": "83f48ee3-b08d-44f6-b511-8e7f9ec17d94"
+        "projectId": "44d3f0ab-08c1-45f5-a885-86bf583a4a23"
       }
     },
     "android": {
-      "package": "com.evelio.excellenta.boltexponativewindp"
+      "package": "com.evelio.excellenta.boltexponativewindp",
+      "adaptiveIcon":{
+        "foregroundImage": "./assets/images/vuluz.png",
+        "backgroundColor": "#ffffff"
+      }
     }
   }
-  }
+}
