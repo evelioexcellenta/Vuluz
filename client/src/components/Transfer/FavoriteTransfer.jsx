@@ -34,15 +34,51 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
   const fetchFavorites = async () => {
     try {
       const res = await apiRequest("/api/getfavorites");
-      setFavorites(res.data);
+      setFavorites(res.data || []);
     } catch (err) {
       console.error(err);
     }
   };
 
+  const validateAmount = (value) => {
+    const numValue = parseFloat(value);
+
+    if (!value) {
+      return "Amount is required";
+    }
+
+    if (numValue < 0) {
+      return "Amount cannot be below zero";
+    }
+
+    if (numValue > 100000000) {
+      return "Maximum amount is 100,000,000";
+    }
+
+    return ""; // No error
+  };
+
+  const handleAmountChange = (e) => {
+    const value = e.target.value;
+
+    // Allow only numbers and decimal point
+    if (!/^[0-9]*$/.test(value) && value !== "") {
+      return;
+    }
+
+    setAmount(value);
+    setError(validateAmount(value));
+  };
+
   const handleTransfer = () => {
-    if (!selectedFavorite || !amount) {
-      setError("Please select a favorite and enter amount.");
+    if (!selectedFavorite) {
+      setError("Please select a favorite recipient");
+      return;
+    }
+
+    const amountError = validateAmount(amount);
+    if (amountError) {
+      setError(amountError);
       return;
     }
 
@@ -64,22 +100,21 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
   const handlePinConfirm = async (pin) => {
     try {
       setShowPinModal(false);
-
       const finalData = { ...pendingData, pin };
       const result = await onSubmit(finalData);
-
-      if (result.success) {
+      if (result?.success) {
         setSuccessData({
           amount: finalData.amount,
           recipient: finalData.recipient,
-          accountNumber: finalData.accountNumber,
+          accountNumber:
+            finalData.accountNumber || selectedFavorite.walletNumber,
         });
         setShowSuccessModal(true);
         setAmount("");
         setDescription("");
         setSelectedFavorite(null);
       } else {
-        setError(result.error || "Transfer failed.");
+        setError(result?.error || "Transfer failed.");
       }
     } catch (err) {
       setError(err.message || "Transfer failed.");
@@ -88,14 +123,24 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
 
   return (
     <Card>
-      <Card.Header title="Transfer via Favorite" subtitle="Send Money to Your Favorite Recipient Quickly" />
+      <Card.Header
+        title="Transfer via Favorite"
+        subtitle="Send Money to Your Favorite Recipient Quickly"
+      />
       <Card.Body className="space-y-4">
         {error && (
-          <Alert type="error" title="Error" message={error} onClose={() => setError("")} />
+          <Alert
+            type="error"
+            title="Error"
+            message={error}
+            onClose={() => setError("")}
+          />
         )}
 
         <div>
-          <label className="form-label">Select Favorite Recipient</label>
+          <label htmlFor="favorite-amount" className="form-label">
+            Select Favorite Recipient
+          </label>
           <Button onClick={() => setShowFavoritesPopup(true)} variant="primary">
             Show Favorite
           </Button>
@@ -106,7 +151,6 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
             onSelect={(fav) => {
               setSelectedFavorite(fav);
               setShowFavoritesPopup(false);
-              fetchFavorites(); // refresh list after add/delete
             }}
           />
 
@@ -122,14 +166,35 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
           )}
         </div>
 
-        <Input
-          label="Amount"
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="Enter amount"
-          required
-        />
+        <div className="form-control">
+          <label htmlFor="favorite-amount" className="form-label">
+            Amount
+          </label>
+          <div className="relative">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+              Rp
+            </span>
+            <input
+              id="favorite-amount"
+              name="amount"
+              type="text"
+              className="form-input pl-10"
+              value={amount}
+              onChange={handleAmountChange}
+              placeholder="Enter amount"
+              min="0"
+              max="100000000"
+              required
+              // Disable the up/down buttons
+              onWheel={(e) => e.target.blur()}
+              inputMode="numeric"
+              pattern="[0-9]*"
+            />
+          </div>
+          {error && error.includes("Amount") && (
+            <div className="text-red-500 text-sm mt-1">{error}</div>
+          )}
+        </div>
 
         <div className="form-control">
           <label htmlFor="description" className="form-label">
@@ -142,7 +207,7 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Optional notes"
-          ></textarea>
+          />
         </div>
 
         <Button
@@ -150,81 +215,73 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
           variant="primary"
           isLoading={isLoading}
           onClick={handleTransfer}
+          disabled={!selectedFavorite || !amount || error}
         >
           Send Money
         </Button>
       </Card.Body>
 
+      {/* Confirmation Modal */}
       <Modal
         isOpen={showConfirmation}
         onClose={() => setShowConfirmation(false)}
         title="Confirm Transfer"
-        footer={
-          <div className="flex justify-end space-x-3">
-            <Button variant="outline" onClick={() => setShowConfirmation(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={handleConfirmTransfer} isLoading={isLoading}>
-              Confirm Transfer
-            </Button>
-          </div>
-        }
       >
-        <div className="space-y-4">
-          <p className="text-gray-600">You are about to transfer:</p>
-
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-500">Amount:</span>
-              <span className="font-bold text-gray-800">
-                {formatCurrency(formData?.amount)}
-              </span>
+        <div className="p-4">
+          <div className="text-center mb-4">
+            <div className="text-lg font-medium">Transfer Details</div>
+            <div className="text-3xl font-bold text-primary-600 my-2">
+              {formatCurrency(formData?.amount || 0)}
             </div>
+          </div>
 
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-500">To:</span>
-              <span className="font-medium text-gray-800">
-                {formData?.recipient}
-              </span>
+          <div className="space-y-2 mb-4">
+            <div className="flex justify-between">
+              <span className="text-gray-600">To</span>
+              <span className="font-medium">{formData?.recipient}</span>
             </div>
-
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-500">Account:</span>
-              <span className="font-medium text-gray-800">
-                {formData?.accountNumber}
-              </span>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Account</span>
+              <span>{formData?.accountNumber}</span>
             </div>
-
             {formData?.description && (
               <div className="flex justify-between">
-                <span className="text-gray-500">Description:</span>
-                <span className="text-gray-800">{formData.description}</span>
+                <span className="text-gray-600">Description</span>
+                <span>{formData?.description}</span>
               </div>
             )}
           </div>
 
-          <p className="text-sm text-gray-500 italic">
-            Please verify the information above before confirming.
-          </p>
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              fullWidth
+              onClick={() => setShowConfirmation(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="primary" fullWidth onClick={handleConfirmTransfer}>
+              Confirm
+            </Button>
+          </div>
         </div>
       </Modal>
 
+      {/* PIN Modal */}
       <PinModal
         isOpen={showPinModal}
         onClose={() => setShowPinModal(false)}
         onConfirm={handlePinConfirm}
-        isLoading={isLoading}
       />
 
-      {successData && (
-        <TransferSuccessModal
-          isOpen={showSuccessModal}
-          onClose={() => setShowSuccessModal(false)}
-          amount={formatCurrency(successData.amount)}
-          recipientName={successData.recipient}
-          accountNumber={successData.accountNumber}
-        />
-      )}
+      {/* Success Modal */}
+      <TransferSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        amount={formatCurrency(successData?.amount || 0)}
+        recipientName={successData?.recipient || ""}
+        accountNumber={successData?.accountNumber || ""}
+      />
     </Card>
   );
 };

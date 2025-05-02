@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { useForm } from "react-hook-form";
 import Card from "../UI/Card";
@@ -15,8 +15,8 @@ import TransferSuccessModal from "../UI/TransferSuccessModal";
 const TransferForm = ({
   onSubmit,
   isLoading = false,
-  maxTransferAmount = 99999999,
-  minTransferAmount = 3000,
+  maxTransferAmount = 100000000,
+  minTransferAmount = 10000,
   className = "",
 }) => {
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -27,6 +27,7 @@ const TransferForm = ({
   const [successData, setSuccessData] = useState(null);
   const [error, setError] = useState("");
   const [recipientName, setRecipientName] = useState("");
+  const [isLoadingRecipient, setIsLoadingRecipient] = useState(false);
 
   const {
     register,
@@ -34,34 +35,131 @@ const TransferForm = ({
     formState: { errors },
     reset,
     watch,
+    setValue,
+    setError: setFormError,
+    clearErrors,
   } = useForm({
     defaultValues: {
-      recipient: "",
       accountNumber: "",
       amount: "",
       description: "",
     },
+    mode: "onChange",
   });
 
-  const amountValue = watch("amount");
   const accountNumberValue = watch("accountNumber");
+  const amountValue = watch("amount");
   const descriptionValue = watch("description");
 
-  const handleFormSubmit = () => {
-    const parsedAmount = parseFloat(amountValue);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      setError("Please enter a valid amount greater than 0.");
+  // Validate account number when it changes
+  useEffect(() => {
+    if (accountNumberValue && accountNumberValue.length > 5) {
+      lookupAccountDetails(accountNumberValue);
+    } else {
+      setRecipientName("");
+    }
+  }, [accountNumberValue]);
+
+  // Function to lookup account details (similar to FavoriteManager's handleCheck)
+  const lookupAccountDetails = async (accountNumber) => {
+    // Clear previous errors
+    clearErrors("accountNumber");
+
+    // Validate account number format first
+    if (!accountNumber || accountNumber === "") {
+      setFormError("accountNumber", {
+        type: "required",
+        message: "Account number is required",
+      });
       return;
     }
 
-    const transferData = {
-      accountNumber: accountNumberValue,
-      amount: parsedAmount,
-      recipient: recipientName || "Unknown",
-      description: descriptionValue,
-    };
+    // Check if account number is a valid number and > 0
+    const numericValue = parseInt(accountNumber, 10);
+    if (isNaN(numericValue) || numericValue <= 0) {
+      setFormError("accountNumber", {
+        type: "min",
+        message: "Account number cannot be below zero",
+      });
+      return;
+    }
 
-    setFormData(transferData);
+    try {
+      setIsLoadingRecipient(true);
+
+      // Call the actual API (same endpoint as used in FavoriteManager)
+      const res = await apiRequest(
+        `/api/wallet/owner/${Number(accountNumber)}`
+      );
+      const name = res.fullName || res.data?.fullName;
+
+      if (name) {
+        setRecipientName(name);
+        clearErrors("accountNumber");
+      } else {
+        setRecipientName("");
+        setFormError("accountNumber", {
+          type: "notFound",
+          message: "Account number not found",
+        });
+      }
+    } catch (err) {
+      setRecipientName("");
+      setFormError("accountNumber", {
+        type: "api",
+        message: "Error verifying account",
+      });
+    } finally {
+      setIsLoadingRecipient(false);
+    }
+  };
+
+  const onFormSubmit = (data) => {
+    // Validate amount
+    const amount = parseFloat(data.amount);
+
+    if (isNaN(amount)) {
+      setFormError("amount", {
+        type: "required",
+        message: "Amount is required",
+      });
+      return;
+    }
+
+    if (amount < minTransferAmount) {
+      setFormError("amount", {
+        type: "min",
+        message: `Minimum amount is Rp ${minTransferAmount.toLocaleString()}`,
+      });
+      return;
+    }
+
+    if (amount > maxTransferAmount) {
+      setFormError("amount", {
+        type: "max",
+        message: `Maximum amount is Rp ${maxTransferAmount.toLocaleString()}`,
+      });
+      return;
+    }
+
+    // Check if recipient name was found
+    if (!recipientName) {
+      setFormError("accountNumber", {
+        type: "invalid",
+        message: "Please enter a valid account number",
+      });
+      return;
+    }
+
+    // Prepare form data for confirmation
+    setFormData({
+      accountNumber: data.accountNumber,
+      recipient: recipientName,
+      amount: amount,
+      description: data.description,
+    });
+
+    // Show confirmation modal
     setShowConfirmation(true);
   };
 
@@ -77,176 +175,235 @@ const TransferForm = ({
       const finalData = { ...pendingData, pin };
       const result = await onSubmit(finalData);
 
-      if (result.success) {
+      if (result?.success) {
+        // Ensure all required data for the success modal is properly set
         setSuccessData({
-          amount: finalData.amount,
-          recipient: finalData.recipient,
-          accountNumber: finalData.accountNumber,
+          amount: formatCurrency(finalData.amount),
+          recipientName: finalData.recipient || "",
+          accountNumber: finalData.accountNumber || "",
         });
         setShowSuccessModal(true);
-        reset();
+        reset(); // Reset form
         setRecipientName("");
       } else {
-        setError(result.error || "Transfer failed. Please try again.");
+        setError(result?.error || "Transfer failed. Please try again.");
       }
     } catch (err) {
-      setError(err.message || "An unexpected error occurred.");
+      setError(err.message || "Transfer failed. Please try again.");
     }
   };
 
-  const handleCheckAccount = async () => {
-    const accountNumber = watch("accountNumber");
-    if (!accountNumber) {
-      setRecipientName("User not found");
+  // Custom onChange handler for amount field to restrict input to numbers only
+  const handleAmountChange = (e) => {
+    const value = e.target.value;
+
+    // Allow only numbers
+    if (!/^[0-9]*$/.test(value) && value !== "") {
       return;
     }
-    try {
-      const res = await apiRequest(`/api/wallet/owner/${Number(accountNumber)}`);
-      setRecipientName(res.fullName || res.data?.fullName || "User not found");
-      setError("");
-    } catch {
-      setRecipientName("");
-      setError("User not found");
+
+    setValue("amount", value);
+
+    // Clear error if value is valid
+    if (
+      parseFloat(value) >= minTransferAmount &&
+      parseFloat(value) <= maxTransferAmount
+    ) {
+      clearErrors("amount");
     }
+  };
+
+  // Custom onChange handler for account number
+  const handleAccountNumberChange = (e) => {
+    const value = e.target.value;
+
+    // Allow only numbers
+    if (!/^[0-9]*$/.test(value) && value !== "") {
+      return;
+    }
+
+    setValue("accountNumber", value);
   };
 
   return (
-    <Card className={`animate-fade-in ${className}`}>
-      <Card.Header title="Transfer Money" subtitle="Send money to another account" />
-      <Card.Body className="font-poppins">
+    <Card className={className}>
+      <Card.Header
+        title="Transfer Money"
+        subtitle="Send money to another account"
+      />
+      <Card.Body>
         {error && (
-          <Alert type="error" title="Transfer Failed" message={error} onClose={() => setError("")} />
+          <Alert
+            type="error"
+            title="Error"
+            message={error}
+            onClose={() => setError("")}
+            className="mb-4"
+          />
         )}
 
-        <form onSubmit={handleSubmit(handleFormSubmit)}>
+        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
           <div className="form-control">
-            <label className="form-label">Account Number *</label>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                className="form-input flex-1"
-                {...register("accountNumber", {
-                  required: "Account number is required",
-                  min: { value: 100000, message: "Min 6 digits" },
-                  max: { value: 999999999999, message: "Max 12 digits" },
-                  validate: {
-                    validAccount: (value) =>
-                      isValidAccountNumber(value) || "Invalid account number",
-                  },
-                })}
-                disabled={isLoading}
-              />
-              <Button type="button" variant="primary" onClick={handleCheckAccount}>
-                Check
-              </Button>
-            </div>
+            <label htmlFor="accountNumber" className="form-label">
+              Account Number<span className="text-red-500">*</span>
+            </label>
+            <input
+              id="accountNumber"
+              type="text"
+              className={`form-input ${
+                errors.accountNumber ? "border-red-500" : ""
+              }`}
+              value={accountNumberValue}
+              onChange={handleAccountNumberChange}
+              placeholder="Enter account number"
+              inputMode="numeric"
+              pattern="[0-9]*"
+            />
             {errors.accountNumber && (
-              <p className="text-sm text-red-500 mt-1">
+              <div className="text-red-500 text-sm mt-1">
                 {errors.accountNumber.message}
-              </p>
+              </div>
             )}
           </div>
 
-          <Input
-            label="Recipient Name"
-            id="recipient"
-            value={recipientName || "User not found"}
-            readOnly
-            disabled
-          />
-
-          <Input
-            label="Amount"
-            type="number"
-            id="amount"
-            step="0.01"
-            min={minTransferAmount}
-            max={maxTransferAmount}
-            {...register("amount")}
-            error={errors.amount?.message}
-            placeholder="0.00"
-            disabled={isLoading}
-            required
-          />
-
           <div className="form-control">
-            <label className="form-label">Description</label>
-            <textarea
-              rows="3"
-              className="form-input"
-              placeholder="What's this transfer for?"
-              {...register("description")}
-              disabled={isLoading}
-            ></textarea>
+            <label htmlFor="recipientName" className="form-label">
+              Recipient Name<span className="text-red-500">*</span>
+            </label>
+            <input
+              id="recipientName"
+              type="text"
+              className="form-input bg-gray-50"
+              value={recipientName}
+              readOnly
+              placeholder={
+                isLoadingRecipient
+                  ? "Loading..."
+                  : "Recipient name will appear here"
+              }
+            />
           </div>
 
-          <Button type="submit" variant="primary" fullWidth isLoading={isLoading}>
-            Continue
+          <div className="form-control">
+            <label htmlFor="amount" className="form-label">
+              Amount<span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                Rp
+              </span>
+              <input
+                id="amount"
+                type="text"
+                className={`form-input pl-10 ${
+                  errors.amount ? "border-red-500" : ""
+                }`}
+                value={amountValue}
+                onChange={handleAmountChange}
+                placeholder="150,000"
+                // Disable the up/down buttons
+                onWheel={(e) => e.target.blur()}
+                inputMode="numeric"
+                pattern="[0-9]*"
+              />
+            </div>
+            {errors.amount && (
+              <div className="text-red-500 text-sm mt-1">
+                {errors.amount.message}
+              </div>
+            )}
+            <div className="text-xs text-gray-500 mt-1">
+              Minimum: Rp {minTransferAmount.toLocaleString()}, Maximum: Rp{" "}
+              {maxTransferAmount.toLocaleString()}
+            </div>
+          </div>
+
+          <div className="form-control">
+            <label htmlFor="description" className="form-label">
+              Description
+            </label>
+            <input
+              id="description"
+              type="text"
+              className="form-input"
+              value={descriptionValue}
+              onChange={(e) => setValue("description", e.target.value)}
+              placeholder="What's this transfer for?"
+            />
+          </div>
+
+          <Button
+            type="submit"
+            variant="primary"
+            fullWidth
+            isLoading={isLoading}
+          >
+            Send Money
           </Button>
         </form>
       </Card.Body>
 
+      {/* Confirmation Modal */}
       <Modal
         isOpen={showConfirmation}
         onClose={() => setShowConfirmation(false)}
         title="Confirm Transfer"
-        footer={
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowConfirmation(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={handleConfirmTransfer} isLoading={isLoading}>
-              Confirm Transfer
-            </Button>
-          </div>
-        }
       >
-        <div className="space-y-4">
-          <p className="text-gray-600">You are about to transfer:</p>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-500">Amount:</span>
-              <span className="font-bold text-gray-800">
-                {formatCurrency(formData?.amount)}
-              </span>
+        <div className="p-4">
+          <div className="text-center mb-4">
+            <div className="text-lg font-medium">Transfer Details</div>
+            <div className="text-3xl font-bold text-primary-600 my-2">
+              {formatCurrency(formData?.amount || 0)}
             </div>
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-500">To:</span>
-              <span className="font-medium text-gray-800">{formData?.recipient}</span>
+          </div>
+
+          <div className="space-y-2 mb-4">
+            <div className="flex justify-between">
+              <span className="text-gray-600">To</span>
+              <span className="font-medium">{formData?.recipient}</span>
             </div>
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-500">Account:</span>
-              <span className="font-medium text-gray-800">{formData?.accountNumber}</span>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Account</span>
+              <span>{formData?.accountNumber}</span>
             </div>
             {formData?.description && (
               <div className="flex justify-between">
-                <span className="text-gray-500">Description:</span>
-                <span className="text-gray-800">{formData.description}</span>
+                <span className="text-gray-600">Description</span>
+                <span>{formData?.description}</span>
               </div>
             )}
           </div>
-          <p className="text-sm text-gray-500 italic">
-            Please verify the information above before confirming.
-          </p>
+
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              fullWidth
+              onClick={() => setShowConfirmation(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="primary" fullWidth onClick={handleConfirmTransfer}>
+              Confirm
+            </Button>
+          </div>
         </div>
       </Modal>
 
+      {/* PIN Modal */}
       <PinModal
         isOpen={showPinModal}
         onClose={() => setShowPinModal(false)}
         onConfirm={handlePinConfirm}
-        isLoading={isLoading}
       />
 
-      {successData && (
-        <TransferSuccessModal
-          isOpen={showSuccessModal}
-          onClose={() => setShowSuccessModal(false)}
-          amount={formatCurrency(successData.amount)}
-          recipientName={successData.recipient}
-          accountNumber={successData.accountNumber}
-        />
-      )}
+      {/* Success Modal */}
+      <TransferSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        amount={successData?.amount || ""}
+        recipientName={successData?.recipientName || ""}
+        accountNumber={successData?.accountNumber || ""}
+      />
     </Card>
   );
 };

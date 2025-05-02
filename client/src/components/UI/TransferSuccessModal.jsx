@@ -1,7 +1,8 @@
+import { useState } from "react";
 import PropTypes from "prop-types";
 import Modal from "./Modal";
-import { CheckCircle } from "lucide-react";
 import Button from "./Button";
+import { CheckCircle } from "lucide-react";
 
 const TransferSuccessModal = ({
   isOpen,
@@ -11,39 +12,41 @@ const TransferSuccessModal = ({
   accountNumber,
 }) => {
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="text-center space-y-2 px-6 py-8">
-        <div className="flex justify-center">
-          <div className="bg-green-100 rounded-full p-2">
-            <CheckCircle size={48} className="text-green-500" />
-          </div>
+    <Modal isOpen={isOpen} onClose={onClose} title="Transfer Success">
+      <div className="p-4 text-center">
+        <div className="flex justify-center mb-4">
+          <CheckCircle className="h-16 w-16 text-green-500" />
         </div>
-
-        <h2 className="text-xl font-bold text-gray-900">
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">
           Transfer Successful!
         </h2>
-        <p className="text-sm text-gray-600">The funds have been transferred.</p>
+        <p className="text-gray-600 mb-6">
+          Your money has been successfully transferred.
+        </p>
 
-        <div className="bg-gray-100 text-sm text-left p-4 rounded-xl space-y-2 mt-4">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Amount:</span>
-            <span className="font-semibold text-gray-900">{amount}</span>
+        <div className="bg-gray-50 p-4 rounded-lg mb-6">
+          <div className="text-center mb-2">
+            <div className="text-sm text-gray-500">Amount</div>
+            <div className="text-2xl font-bold text-primary-600">{amount}</div>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">To:</span>
-            <span className="text-gray-900">{recipientName}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Account:</span>
-            <span className="text-gray-900">{accountNumber}</span>
+
+          <div className="space-y-2">
+            <div>
+              <div className="text-sm text-gray-500">Recipient</div>
+              <div className="font-medium">{recipientName}</div>
+            </div>
+            {accountNumber && (
+              <div>
+                <div className="text-sm text-gray-500">Account Number</div>
+                <div>{accountNumber}</div>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="pt-6">
-          <Button onClick={onClose} fullWidth variant="primary">
-            Confirm
-          </Button>
-        </div>
+        <Button variant="primary" fullWidth onClick={onClose}>
+          Done
+        </Button>
       </div>
     </Modal>
   );
@@ -52,12 +55,16 @@ const TransferSuccessModal = ({
 TransferSuccessModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
-  amount: PropTypes.string.isRequired,
-  recipientName: PropTypes.string.isRequired,
-  accountNumber: PropTypes.oneOfType([
-    PropTypes.string,
-    PropTypes.number,
-  ]).isRequired,
+  amount: PropTypes.string,
+  recipientName: PropTypes.string,
+  accountNumber: PropTypes.string,
+};
+
+// Default props to prevent undefined errors
+TransferSuccessModal.defaultProps = {
+  amount: "",
+  recipientName: "",
+  accountNumber: "",
 };
 
 export default TransferSuccessModal;

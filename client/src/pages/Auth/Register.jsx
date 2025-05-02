@@ -6,11 +6,20 @@ import Button from "../../components/UI/Button";
 import Alert from "../../components/UI/Alert";
 import { ROUTES } from "../../constants/routes";
 import useAuth from "../../hooks/useAuth";
-import { isValidEmail, isValidPassword } from "../../utils/validators";
-import { APP_CONFIG } from "../../constants/config";
+import { isValidEmail } from "../../utils/validators";
 import vuluzImage from "../../assets/vuluz.png";
 import VLogo from "../../assets/V.png";
 import successIcon from "../../assets/success.png";
+
+// Enhanced password validator with stronger requirements
+const isStrongPassword = (password) => {
+  // At least 8 characters, with at least one uppercase letter, one lowercase letter, and one number
+  const hasMinLength = password.length >= 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  return hasMinLength && hasUpperCase && hasNumber && hasLowerCase;
+};
 
 const Register = () => {
   const [error, setError] = useState("");
@@ -26,6 +35,9 @@ const Register = () => {
     formState: { errors },
     watch,
     getValues,
+    setError: setFormError,
+    clearErrors,
+    setValue,
   } = useForm({
     defaultValues: {
       name: "",
@@ -35,6 +47,7 @@ const Register = () => {
       password: "",
       confirmPassword: "",
     },
+    mode: "onBlur", // Validate on blur for better UX
   });
 
   const password = watch("password");
@@ -42,6 +55,102 @@ const Register = () => {
   useEffect(() => {
     if (isAuthenticated) navigate(ROUTES.LOGIN);
   }, [isAuthenticated, navigate]);
+
+  // Handle form submission for step 1
+  const onSubmitStep1 = async (data) => {
+    try {
+      // Basic validation - already handled by react-hook-form
+      clearErrors();
+      setError("");
+      setStep(2);
+    } catch (err) {
+      console.error("Form validation error:", err);
+      setError("An error occurred. Please try again.");
+    }
+  };
+
+  // Go back to previous step
+  const goBack = () => {
+    setStep(step - 1);
+    setError(""); // Clear any errors when going back
+  };
+
+  // Handle registration submission
+  const handleRegistration = async () => {
+    try {
+      if (confirmPin.length !== 6) {
+        setError("PIN must be 6 digits");
+        return;
+      }
+
+      if (confirmPin !== pin) {
+        setError("PINs do not match");
+        return;
+      }
+
+      setError("");
+      const data = getValues();
+
+      console.log("Attempting to register user with data", {
+        name: data.name,
+        userName: data.userName,
+        email: data.email,
+        gender: data.gender,
+        // Never log passwords or PINs in production
+      });
+
+      const success = await registerUser({
+        name: data.name,
+        userName: data.userName,
+        gender: data.gender || "N/A",
+        email: data.email,
+        password: data.password,
+        pin: confirmPin,
+      });
+
+      console.log("Registration response:", success);
+
+      if (success) {
+        setStep(4);
+      } else {
+        // Changed error message here
+        setError("Your email has been used");
+      }
+    } catch (err) {
+      console.error("Registration error:", err);
+
+      // Specifically handle the "Email already exists" error format from the API log
+      const errorMessage = err.message || "";
+
+      if (errorMessage.includes("Email already exists")) {
+        // Changed error message here
+        setError("Your email has been used");
+        // Go back to step 1 and mark the email field as invalid
+        setStep(1);
+
+        // Set form-level error for the email field
+        setTimeout(() => {
+          setFormError("email", {
+            type: "manual",
+            message: "Your email has been used",
+          });
+        }, 100);
+      } else if (errorMessage.includes("PIN must be")) {
+        setError("PIN must be 6 numeric digits");
+      } else if (errorMessage.toLowerCase().includes("password")) {
+        setError(errorMessage || "Password does not meet requirements");
+        setStep(1);
+        setTimeout(() => {
+          setFormError("password", {
+            type: "manual",
+            message: errorMessage || "Password does not meet requirements",
+          });
+        }, 100);
+      } else {
+        setError(`Registration error: ${errorMessage || "Unknown error"}`);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-white font-poppins">
@@ -69,8 +178,9 @@ const Register = () => {
                 </Link>
               </p>
               <form
-                onSubmit={handleSubmit(() => setStep(2))}
+                onSubmit={handleSubmit(onSubmitStep1)}
                 className="space-y-6"
+                noValidate
               >
                 <Card>
                   <Card.Body className="space-y-4">
@@ -120,10 +230,14 @@ const Register = () => {
                           required: "Email is required",
                           validate: {
                             validEmail: (v) =>
-                              isValidEmail(v) || "Invalid email",
+                              isValidEmail(v) || "Invalid email format",
                           },
                         })}
-                        className="w-full px-4 py-2 mt-1 border rounded-md focus:ring-2 focus:ring-primary"
+                        className={`w-full px-4 py-2 mt-1 border rounded-md focus:ring-2 ${
+                          errors.email
+                            ? "border-red-500 focus:ring-red-500"
+                            : "focus:ring-primary"
+                        }`}
                         placeholder="youremail@mail.com"
                       />
                       {errors.email && (
@@ -163,11 +277,16 @@ const Register = () => {
                         {...register("password", {
                           required: "Password is required",
                           validate: {
-                            validPassword: (v) =>
-                              isValidPassword(v) || "Min 8 chars, 1 number",
+                            strongPassword: (v) =>
+                              isStrongPassword(v) ||
+                              "Password must be at least 8 characters with uppercase, lowercase, and number",
                           },
                         })}
-                        className="w-full px-4 py-2 mt-1 border rounded-md focus:ring-2 focus:ring-primary"
+                        className={`w-full px-4 py-2 mt-1 border rounded-md focus:ring-2 ${
+                          errors.password
+                            ? "border-red-500 focus:ring-red-500"
+                            : "focus:ring-primary"
+                        }`}
                         placeholder="••••••••"
                       />
                       {errors.password && (
@@ -176,7 +295,8 @@ const Register = () => {
                         </p>
                       )}
                       <p className="text-xs text-gray-500 mt-1">
-                        At least 8 characters, including a number
+                        At least 8 characters, including uppercase, lowercase,
+                        and a number
                       </p>
                     </div>
 
@@ -241,7 +361,9 @@ const Register = () => {
           {step === 2 && (
             <>
               <h2 className="text-2xl font-bold mb-2">Create PIN</h2>
-              <p className="text-sm text-gray-600 mb-6">Create your PIN!</p>
+              <p className="text-sm text-gray-600 mb-6">
+                Create your 6-digit security PIN!
+              </p>
               <div className="flex justify-center gap-3 mb-6">
                 {[...Array(6)].map((_, i) => (
                   <input
@@ -253,7 +375,7 @@ const Register = () => {
                     value={pin[i] || ""}
                     onChange={(e) => {
                       const val = e.target.value;
-                      if (!/\d?/.test(val)) return;
+                      if (!/^\d?$/.test(val)) return;
                       const updated = pin.split("");
                       updated[i] = val;
                       setPin(updated.join(""));
@@ -270,21 +392,38 @@ const Register = () => {
                   />
                 ))}
               </div>
-              <Button
-                onClick={() => setStep(3)}
-                variant="primary"
-                fullWidth
-                className="bg-primary text-white font-semibold text-sm h-[57px] rounded-[8px]"
-              >
-                Confirm
-              </Button>
+              <div className="flex space-x-4">
+                <Button
+                  onClick={goBack}
+                  variant="secondary"
+                  className="flex-1 bg-gray-100 border border-gray-300 text-gray-700 font-semibold text-sm h-[57px] rounded-[8px]"
+                >
+                  Go Back
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (pin.length !== 6) {
+                      setError("PIN must be 6 digits");
+                      return;
+                    }
+                    setError("");
+                    setStep(3);
+                  }}
+                  variant="primary"
+                  className="flex-1 bg-primary text-white font-semibold text-sm h-[57px] rounded-[8px]"
+                >
+                  Confirm
+                </Button>
+              </div>
             </>
           )}
 
           {step === 3 && (
             <>
               <h2 className="text-2xl font-bold mb-2">Re-enter PIN</h2>
-              <p className="text-sm text-gray-600 mb-6">Re-enter your PIN</p>
+              <p className="text-sm text-gray-600 mb-6">
+                Re-enter your 6-digit PIN
+              </p>
               <div className="flex justify-center gap-3 mb-6">
                 {[...Array(6)].map((_, i) => (
                   <input
@@ -319,29 +458,23 @@ const Register = () => {
                   />
                 ))}
               </div>
-              <Button
-                onClick={async () => {
-                  if (confirmPin !== pin) {
-                    setError("PINs do not match");
-                    return;
-                  }
-                  setError("");
-                  const data = getValues();
-                  const success = await registerUser({
-                    name: data.name,
-                    userName: data.userName,
-                    gender: data.gender || "N/A",
-                    email: data.email,
-                    password: data.password,
-                    pin: confirmPin,
-                  });
-                  if (success) setStep(4);
-                }}
-                variant="primary"
-                fullWidth
-              >
-                Confirm
-              </Button>
+              <div className="flex space-x-4">
+                <Button
+                  onClick={goBack}
+                  variant="secondary"
+                  className="flex-1 bg-gray-100 border border-gray-300 text-gray-700 font-semibold text-sm h-[57px] rounded-[8px]"
+                >
+                  Go Back
+                </Button>
+                <Button
+                  onClick={handleRegistration}
+                  variant="primary"
+                  disabled={isLoading}
+                  className="flex-1 bg-primary text-white font-semibold text-sm h-[57px] rounded-[8px]"
+                >
+                  {isLoading ? "Processing..." : "Confirm"}
+                </Button>
+              </div>
             </>
           )}
 
