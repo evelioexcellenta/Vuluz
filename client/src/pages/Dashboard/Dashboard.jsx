@@ -1,4 +1,4 @@
-import { useEffect, useContext } from "react";
+import { useEffect, useContext, useState } from "react";
 import { Navigate } from "react-router-dom";
 import AppLayout from "../../components/Layout/AppLayout";
 import BalanceCard from "../../components/Dashboard/BalanceCard";
@@ -13,6 +13,27 @@ const Dashboard = () => {
   // ▶ Semua hooks dipanggil langsung
   const { user, isAuthenticated } = useAuth();
   const { reloadAllData } = useContext(TransactionContext);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  // Function to copy account number to clipboard
+  const copyAccountNumber = () => {
+    if (user && user.walletNumber) {
+      navigator.clipboard
+        .writeText(user.walletNumber.toString())
+        .then(() => {
+          // Show success message
+          setCopySuccess(true);
+
+          // Hide success message after 2 seconds
+          setTimeout(() => {
+            setCopySuccess(false);
+          }, 2000);
+        })
+        .catch((err) => {
+          console.error("Failed to copy: ", err);
+        });
+    }
+  };
 
   // ▶ Panggil reloadAllData hanya sekali saat Dashboard pertama kali mount
   useEffect(() => {
@@ -48,13 +69,14 @@ const Dashboard = () => {
               <p className="text-sm text-gray-500 font-poppins">
                 Account Number
               </p>
-              <div className="flex items-center mt-1">
+              <div className="flex items-center mt-1 relative">
                 <p className="text-lg font-medium text-gray-800 font-poppins">
                   {user.walletNumber}
                 </p>
                 <button
-                  aria-label="Copy account"
-                  className="ml-2 text-primary hover:text-primary-700"
+                  onClick={copyAccountNumber}
+                  aria-label="Copy account number"
+                  className="ml-2 text-primary hover:text-primary-700 focus:outline-none"
                 >
                   {/* SVG icon copy */}
                   <svg
@@ -73,6 +95,13 @@ const Dashboard = () => {
                     />
                   </svg>
                 </button>
+
+                {/* Copy success tooltip */}
+                {copySuccess && (
+                  <div className="absolute left-0 -bottom-8 bg-green-100 text-green-800 text-xs px-2 py-1 rounded shadow-sm">
+                    Copied to clipboard!
+                  </div>
+                )}
               </div>
             </div>
 

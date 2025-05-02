@@ -40,11 +40,48 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
     }
   };
 
-  const handleTransfer = () => {
-    if (!selectedFavorite || !amount) {
-      setError("Please select a favorite and enter amount.");
+  const validateAmount = (value) => {
+    const numValue = parseFloat(value);
+
+    if (!value) {
+      return "Amount is required";
+    }
+
+    if (numValue < 0) {
+      return "Amount cannot be below zero";
+    }
+
+    if (numValue > 100000000) {
+      return "Maximum amount is 100,000,000";
+    }
+
+    return ""; // No error
+  };
+
+  const handleAmountChange = (e) => {
+    const value = e.target.value;
+
+    // Allow only numbers and decimal point
+    if (!/^[0-9]*$/.test(value) && value !== "") {
       return;
     }
+
+    setAmount(value);
+    setError(validateAmount(value));
+  };
+
+  const handleTransfer = () => {
+    if (!selectedFavorite) {
+      setError("Please select a favorite recipient");
+      return;
+    }
+
+    const amountError = validateAmount(amount);
+    if (amountError) {
+      setError(amountError);
+      return;
+    }
+
     setFormData({
       accountNumber: selectedFavorite.walletNumber,
       recipient: selectedFavorite.ownerName,
@@ -65,18 +102,19 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
       setShowPinModal(false);
       const finalData = { ...pendingData, pin };
       const result = await onSubmit(finalData);
-      if (result.success) {
+      if (result?.success) {
         setSuccessData({
           amount: finalData.amount,
           recipient: finalData.recipient,
-          accountNumber: finalData.accountNumber,
+          accountNumber:
+            finalData.accountNumber || selectedFavorite.walletNumber,
         });
         setShowSuccessModal(true);
         setAmount("");
         setDescription("");
         setSelectedFavorite(null);
       } else {
-        setError(result.error || "Transfer failed.");
+        setError(result?.error || "Transfer failed.");
       }
     } catch (err) {
       setError(err.message || "Transfer failed.");
@@ -128,16 +166,35 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
           )}
         </div>
 
-        <Input
-          id="favorite-amount"
-          name="amount"
-          label="Amount"
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="Enter amount"
-          required
-        />
+        <div className="form-control">
+          <label htmlFor="favorite-amount" className="form-label">
+            Amount
+          </label>
+          <div className="relative">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+              Rp
+            </span>
+            <input
+              id="favorite-amount"
+              name="amount"
+              type="text"
+              className="form-input pl-10"
+              value={amount}
+              onChange={handleAmountChange}
+              placeholder="Enter amount"
+              min="0"
+              max="100000000"
+              required
+              // Disable the up/down buttons
+              onWheel={(e) => e.target.blur()}
+              inputMode="numeric"
+              pattern="[0-9]*"
+            />
+          </div>
+          {error && error.includes("Amount") && (
+            <div className="text-red-500 text-sm mt-1">{error}</div>
+          )}
+        </div>
 
         <div className="form-control">
           <label htmlFor="description" className="form-label">
@@ -158,12 +215,73 @@ const FavoriteTransfer = ({ onSubmit, isLoading = false }) => {
           variant="primary"
           isLoading={isLoading}
           onClick={handleTransfer}
+          disabled={!selectedFavorite || !amount || error}
         >
           Send Money
         </Button>
       </Card.Body>
 
-      {/* Confirmation, PinModal, SuccessModal unchanged */}
+      {/* Confirmation Modal */}
+      <Modal
+        isOpen={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        title="Confirm Transfer"
+      >
+        <div className="p-4">
+          <div className="text-center mb-4">
+            <div className="text-lg font-medium">Transfer Details</div>
+            <div className="text-3xl font-bold text-primary-600 my-2">
+              {formatCurrency(formData?.amount || 0)}
+            </div>
+          </div>
+
+          <div className="space-y-2 mb-4">
+            <div className="flex justify-between">
+              <span className="text-gray-600">To</span>
+              <span className="font-medium">{formData?.recipient}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Account</span>
+              <span>{formData?.accountNumber}</span>
+            </div>
+            {formData?.description && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">Description</span>
+                <span>{formData?.description}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              fullWidth
+              onClick={() => setShowConfirmation(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="primary" fullWidth onClick={handleConfirmTransfer}>
+              Confirm
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* PIN Modal */}
+      <PinModal
+        isOpen={showPinModal}
+        onClose={() => setShowPinModal(false)}
+        onConfirm={handlePinConfirm}
+      />
+
+      {/* Success Modal */}
+      <TransferSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        amount={formatCurrency(successData?.amount || 0)}
+        recipientName={successData?.recipient || ""}
+        accountNumber={successData?.accountNumber || ""}
+      />
     </Card>
   );
 };
