@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import AppLayout from '../../components/Layout/AppLayout';
-import TransferForm from '../../components/Transfer/TransferForm';
-import FavoriteTransfer from '../../components/Transfer/FavoriteTransfer';
-import Card from '../../components/UI/Card';
-import useTransactions from '../../hooks/useTransactions';
+import { useState } from "react";
+import AppLayout from "../../components/Layout/AppLayout";
+import TransferForm from "../../components/Transfer/TransferForm";
+import FavoriteTransfer from "../../components/Transfer/FavoriteTransfer";
+import Card from "../../components/UI/Card";
+import useTransactions from "../../hooks/useTransactions";
 
 const Transfer = () => {
-  const [transferMode, setTransferMode] = useState('favorites'); // 'favorites' or 'manual'
+  const [transferMode, setTransferMode] = useState("favorites"); // 'favorites' or 'manual'
   const { createTransfer, isLoading } = useTransactions();
 
   const handleTransfer = async (transferData) => {
@@ -22,23 +22,27 @@ const Transfer = () => {
           <Card.Body>
             <div className="bg-gray-100 p-1 rounded-lg inline-flex">
               <button
-                onClick={() => setTransferMode('favorites')}
+                onClick={() => setTransferMode("favorites")}
                 className={`
                   px-4 py-2 rounded-md text-sm font-medium transition-all
-                  ${transferMode === 'favorites'
-                    ? 'bg-white text-primary-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'}
+                  ${
+                    transferMode === "favorites"
+                      ? "bg-white text-primary-600 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }
                 `}
               >
                 Favorite Recipients
               </button>
               <button
-                onClick={() => setTransferMode('manual')}
+                onClick={() => setTransferMode("manual")}
                 className={`
                   px-4 py-2 rounded-md text-sm font-medium transition-all
-                  ${transferMode === 'manual'
-                    ? 'bg-white text-primary-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'}
+                  ${
+                    transferMode === "manual"
+                      ? "bg-white text-primary-600 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }
                 `}
               >
                 Manual Transfer
@@ -47,16 +51,10 @@ const Transfer = () => {
           </Card.Body>
         </Card>
 
-        {transferMode === 'favorites' ? (
-          <FavoriteTransfer
-            onSubmit={handleTransfer}
-            isLoading={isLoading}
-          />
+        {transferMode === "favorites" ? (
+          <FavoriteTransfer onSubmit={handleTransfer} isLoading={isLoading} />
         ) : (
-          <TransferForm
-            onSubmit={handleTransfer}
-            isLoading={isLoading}
-          />
+          <TransferForm onSubmit={handleTransfer} isLoading={isLoading} />
         )}
       </div>
     </AppLayout>

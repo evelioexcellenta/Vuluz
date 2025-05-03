@@ -7,9 +7,9 @@ import { CheckCircle } from "lucide-react";
 const TransferSuccessModal = ({
   isOpen,
   onClose,
-  amount,
-  recipientName,
-  accountNumber,
+  amount = "",
+  recipientName = "",
+  accountNumber = "",
 }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Transfer Success">
@@ -58,13 +58,6 @@ TransferSuccessModal.propTypes = {
   amount: PropTypes.string,
   recipientName: PropTypes.string,
   accountNumber: PropTypes.string,
-};
-
-// Default props to prevent undefined errors
-TransferSuccessModal.defaultProps = {
-  amount: "",
-  recipientName: "",
-  accountNumber: "",
 };
 
 export default TransferSuccessModal;

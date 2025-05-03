@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 const Input = forwardRef(({
   label,
   type = 'text',
-  id,
+  id="",
   name,
   value,
   onChange,

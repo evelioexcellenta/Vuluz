@@ -26,37 +26,32 @@ const FavoriteManager = ({ isOpen, onClose, onSelect }) => {
   };
 
   const handleCheck = async () => {
-    if (!walletNumber) {
-      setError("Please enter a wallet number to check.");
-      setRecipientName("");
-      return;
-    }
     try {
       const res = await apiRequest(`/api/wallet/owner/${Number(walletNumber)}`);
-      const name = res.fullName || res.data?.fullName;
-      if (name) {
-        setRecipientName(name);
-        setError("");
-      } else {
-        throw new Error();
-      }
-    } catch {
+      setRecipientName(res.fullName || "User found");
+      setError("");
+    } catch (err) {
       setRecipientName("");
       setError("Wallet not found");
     }
   };
 
   const handleAddFavorite = async () => {
-    if (!recipientName) {
+    if (
+      !recipientName ||
+      recipientName === "" ||
+      recipientName === "User not found"
+    ) {
       setError("Cannot add invalid account to favorites");
       return;
     }
+
     try {
       await apiRequest("/api/favorite", {
         method: "POST",
         body: JSON.stringify({ walletNumber: Number(walletNumber) }),
       });
-      await fetchFavorites();
+      fetchFavorites();
       setWalletNumber("");
       setRecipientName("");
       setError("");
@@ -65,22 +60,25 @@ const FavoriteManager = ({ isOpen, onClose, onSelect }) => {
     }
   };
 
-  const handleDelete = async (numberToDelete) => {
+  const handleDelete = async (walletNumberToDelete) => {
     try {
       const res = await apiRequest(
-        `/api/favorite/delete?walletNumber=${Number(numberToDelete)}`,
-        { method: "DELETE" }
+        `/api/favorite/delete?walletNumber=${Number(walletNumberToDelete)}`,
+        {
+          method: "DELETE",
+        }
       );
-      if (res.status?.toLowerCase() === "success") {
+
+      if (res?.status?.toLowerCase() === "success") {
         setFavorites((prev) =>
-          prev.filter((f) => f.walletNumber !== numberToDelete)
+          prev.filter((fav) => fav.walletNumber !== walletNumberToDelete)
         );
         setError("");
       } else {
-        setError(res.message || "Failed to delete favorite");
+        setError(res?.message || "Failed to delete favorite");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Delete error:", err);
       setError("Failed to delete favorite");
     }
   };
@@ -91,37 +89,34 @@ const FavoriteManager = ({ isOpen, onClose, onSelect }) => {
         <div className="bg-gray-100 p-4 rounded-xl">
           <h2 className="text-lg font-bold text-gray-800 mb-2">Add Favorite</h2>
           <div className="flex items-start gap-2">
-            <div className="flex-1 space-y-1">
+            <div className="flex-1">
               <Input
-                id="fav-wallet-number"
-                name="walletNumber"
-                label="Wallet Number"
+                id="walletNumber"
                 value={walletNumber}
                 onChange={(e) => setWalletNumber(e.target.value)}
                 placeholder="Input Account Number"
                 className="w-full"
               />
-              <Input
-                id="fav-recipient-name"
-                name="recipientName"
-                label="Recipient Name"
-                value={recipientName}
-                readOnly
-                placeholder="Favorite Recipient"
-                className="w-full"
-              />
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              <div className="mt-2 text-sm font-medium text-gray-700 min-h-[1.5rem]">
+                {recipientName || "Favorite Recipient"}
+              </div>
             </div>
             <div className="flex flex-col gap-2">
-              <Button variant="primary" onClick={handleCheck}>
+              <Button variant="primary" className="w-24" onClick={handleCheck}>
                 Check
               </Button>
-              <Button variant="danger" onClick={handleAddFavorite}>
+              <Button
+                variant="danger"
+                className="w-24"
+                onClick={handleAddFavorite}
+              >
                 Add
               </Button>
             </div>
           </div>
         </div>
+
+        {error && <p className="text-sm text-red-500 text-center">{error}</p>}
 
         <div>
           <h2 className="text-base font-semibold text-gray-800 mb-2">
@@ -135,7 +130,7 @@ const FavoriteManager = ({ isOpen, onClose, onSelect }) => {
             <div className="space-y-3">
               {favorites.map((fav) => (
                 <div
-                  key={fav.walletNumber}
+                  key={fav.id}
                   className="flex items-center bg-gray-100 p-3 rounded-xl justify-between"
                 >
                   <div className="flex items-center gap-3">
@@ -145,6 +140,7 @@ const FavoriteManager = ({ isOpen, onClose, onSelect }) => {
                       <div className="text-xs">{fav.walletNumber}</div>
                     </div>
                   </div>
+
                   <div className="flex gap-2 items-center">
                     <Button
                       size="sm"
