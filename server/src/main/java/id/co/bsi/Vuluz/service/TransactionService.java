@@ -45,6 +45,7 @@ public class TransactionService {
     private PasswordEncoder passwordEncoder;
 
     final BigDecimal minimumTopup = BigDecimal.valueOf(10000);
+    final BigDecimal maximumTransaction = BigDecimal.valueOf(100000000);
 
 
     public TransferResponse transfer(TransferRequest transferRequest) {
@@ -73,7 +74,9 @@ public class TransactionService {
             throw new RuntimeException("Transfer amount is required");
         }
 
-
+        if (transferRequest.getAmount().compareTo(maximumTransaction) > 0) {
+            throw new RuntimeException("Transfer amount must not exceed Rp100.000.000");
+        }
 
 
         Wallet toWallet = walletRepository.findByWalletNumber(transferRequest.getToWalletNumber())
@@ -144,6 +147,10 @@ public class TransactionService {
 
         if (topUpRequest.getAmount().compareTo(minimumTopup) < 0) {
             throw new RuntimeException("Top-up amount must be greater than Rp.10.000");
+        }
+
+        if (topUpRequest.getAmount().compareTo(maximumTransaction) > 0) {
+            throw new RuntimeException("Top up amount must not exceed Rp100.000.000");
         }
 
         Wallet wallet = user.getWallet();
