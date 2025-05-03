@@ -1,24 +1,24 @@
-import AppLayout from '../../components/Layout/AppLayout';
-import TopUpForm from '../../components/TopUp/TopUpForm';
-import useTransactions from '../../hooks/useTransactions';
-import { useState, useEffect } from 'react';
+import AppLayout from "../../components/Layout/AppLayout";
+import TopUpForm from "../../components/TopUp/TopUpForm";
+import useTransactions from "../../hooks/useTransactions";
+import { useState, useEffect } from "react";
 
 const TopUp = () => {
   const { createTopUp, isLoading } = useTransactions();
   const [isSuccess, setIsSuccess] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
-  const [amount, setAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('');
-  const [pin, setPin] = useState(['', '', '', '', '', '']);
+  const [amount, setAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [pin, setPin] = useState(["", "", "", "", "", ""]);
 
   useEffect(() => {
     if (showPinModal || isSuccess) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     }
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     };
   }, [showPinModal, isSuccess]);
 
@@ -26,11 +26,11 @@ const TopUp = () => {
     setAmount(topUpData.amount);
     setPaymentMethod(topUpData.paymentMethod);
     setShowPinModal(true);
-    setPin(['', '', '', '', '', '']);
+    setPin(["", "", "", "", "", ""]);
   };
 
   const handleConfirmPin = async () => {
-    const pinCode = pin.join('');
+    const pinCode = pin.join("");
     if (pinCode.length < 6) return;
 
     try {
@@ -38,7 +38,7 @@ const TopUp = () => {
       if (result && result.success) {
         setIsSuccess(true);
         setShowPinModal(false);
-        setPin(['', '', '', '', '', '']);
+        setPin(["", "", "", "", "", ""]);
       } else {
         alert("Top-up failed. Please check your details.");
       }
@@ -50,7 +50,7 @@ const TopUp = () => {
 
   const handleCancelPinModal = () => {
     setShowPinModal(false);
-    setPin(['', '', '', '', '', '']);
+    setPin(["", "", "", "", "", ""]);
   };
 
   const handleCloseSuccessModal = () => {
@@ -80,10 +80,22 @@ const TopUp = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50 backdrop-blur-sm">
             <div className="bg-white rounded-2xl p-6 w-full max-w-md text-center shadow-lg">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">Enter PIN</h2>
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Enter PIN
+                </h2>
                 <button onClick={handleCancelPinModal}>
-                  <svg className="w-6 h-6 text-gray-500 hover:text-gray-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-6 h-6 text-gray-500 hover:text-gray-700"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
@@ -99,8 +111,10 @@ const TopUp = () => {
                     value={val}
                     onChange={(e) => handlePinChange(e.target.value, i)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Backspace' && !val && i > 0) {
-                        const prevInput = document.getElementById(`pin-${i - 1}`);
+                      if (e.key === "Backspace" && !val && i > 0) {
+                        const prevInput = document.getElementById(
+                          `pin-${i - 1}`
+                        );
                         if (prevInput) prevInput.focus();
                       }
                     }}
@@ -132,19 +146,35 @@ const TopUp = () => {
             <div className="bg-white rounded-2xl p-6 w-full max-w-md text-center font-poppins shadow-lg">
               <div className="flex justify-center mb-4">
                 <div className="bg-green-100 rounded-full p-3">
-                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  <svg
+                    className="w-8 h-8 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 </div>
               </div>
 
-              <h2 className="text-xl font-bold text-gray-800">Top Up Successful!</h2>
-              <p className="text-gray-600 mb-6">Your account has been credited.</p>
+              <h2 className="text-xl font-bold text-gray-800">
+                Top Up Successful!
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Your account has been credited.
+              </p>
 
               <div className="bg-gray-100 p-4 rounded text-left mb-6">
                 <div className="flex justify-between mb-2">
                   <span className="font-medium">Amount:</span>
-                  <span className="text-gray-700">Rp {Number(amount).toLocaleString('id-ID')}</span>
+                  <span className="text-gray-700">
+                    Rp {Number(amount).toLocaleString("id-ID")}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium">Payment Method:</span>

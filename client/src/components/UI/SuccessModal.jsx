@@ -1,6 +1,6 @@
-import Modal from './Modal';
-import Button from './Button';
-import PropTypes from 'prop-types';
+import Modal from "./Modal";
+import Button from "./Button";
+import PropTypes from "prop-types";
 import { formatCurrency } from "../../utils/formatters"; // kalau mau formatCurrency juga dipakai disini
 
 const SuccessModal = ({ isOpen, onClose, amount, paymentMethod }) => {
@@ -20,14 +20,26 @@ const SuccessModal = ({ isOpen, onClose, amount, paymentMethod }) => {
       <div className="flex flex-col items-center space-y-6 text-center">
         {/* Success Icon */}
         <div className="bg-green-100 p-4 rounded-full">
-          <svg className="h-12 w-12 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+          <svg
+            className="h-12 w-12 text-green-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M5 13l4 4L19 7"
+            />
           </svg>
         </div>
 
         {/* Success Message */}
         <div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Top Up Successful!</h2>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">
+            Top Up Successful!
+          </h2>
           <p className="text-gray-600 text-sm">
             Your account has been credited.
           </p>
